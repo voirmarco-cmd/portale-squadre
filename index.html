@@ -37,7 +37,7 @@
 <div class="competition-content" id="competitionContent"><div class="competition-bar"><div><div class="eyebrow" id="competitionSport"></div><h3 id="competitionName"></h3></div><span class="competition-badge" id="competitionType"></span></div>
 <div class="stack">
 <section class="card next"><div class="eyebrow">Prossima partita</div><div id="next"></div></section>
-<section class="card"><div class="eyebrow">Classifica</div><h3>Girone <span id="g2"></span></h3><div class="tablewrap"><table class="standings"><thead><tr><th>#</th><th>Squadra</th><th>PG</th><th>V</th><th>N</th><th>P</th><th>RF</th><th>RS</th><th>DR</th><th>PTI</th><th>Forma</th></tr></thead><tbody id="tbody"></tbody></table></div></section>
+<section class="card"><div class="eyebrow">Classifica</div><h3>Girone <span id="g2"></span></h3><div class="tablewrap"><table class="standings"><thead><tr><th>#</th><th>Squadra</th><th title="Giocate">G</th><th title="Vittorie">V</th><th title="Pareggi">P</th><th title="Sconfitte">S</th><th>PTI</th></tr></thead><tbody id="tbody"></tbody></table></div></section>
 <section class="card"><div class="eyebrow">Calendario</div><h3>Partite</h3><div class="list" id="fixtures"></div></section>
 <section class="card"><div class="eyebrow">Marcatori</div><h3>Marcatori squadra</h3><div id="scorers"></div></section>
 </div>
@@ -94,6 +94,6 @@ function selectCompetition(id){
   const rows=(c.standings||{})[g]||[];
   $("fixtures").innerHTML=fs.map(f=>{const home=canon(f.home)===t,opp=home?f.away:f.home;return '<div class="fixture"><div class="when">'+esc(f.date)+'<span class="ftime">'+esc(f.time)+'</span></div><div><div class="opp">'+(home?"vs ":"@ ")+esc(opp)+'</div><span class="fixture-sub">'+(f.field!=="—"?"Campo "+esc(f.field):"Orario/campo da definire")+'</span></div><div class="tag">'+(f.result?esc(f.result):"in programma")+'</div></div>'}).join("");
   const cs=(c.scorers||[]).filter(x=>canon(x.team)===t);$("scorers").innerHTML=cs.length?cs.map((x,i)=>'<div class="fixture"><div class="when">#'+(i+1)+'</div><div class="opp">'+esc(x.name)+'</div><div class="tag">'+x.goals+' gol</div></div>').join(""):'<div class="empty2">Nessun marcatore ancora pubblicato.</div>';
-  $("tbody").innerHTML=rows.map((x,i)=>'<tr class="'+(canon(x.team)===t?"me":"")+'"><td>'+(i+1)+'</td><td>'+esc(x.team)+'</td><td>'+x.pg+'</td><td>'+x.v+'</td><td>'+x.n+'</td><td>'+x.p+'</td><td>'+x.rf+'</td><td>'+x.rs+'</td><td>'+x.dr+'</td><td>'+x.pti+'</td><td>'+(x.form.length?x.form.map(z=>'<span class="dot '+esc(z)+'">'+esc(z)+'</span>').join(""):'<span class="dot">—</span>')+'</td></tr>').join("");
+  $("tbody").innerHTML=rows.map((x,i)=>'<tr class="'+(canon(x.team)===t?"me":"")+'"><td>'+(i+1)+'</td><td>'+esc(x.team)+'</td><td>'+x.pg+'</td><td>'+x.v+'</td><td>'+x.n+'</td><td>'+x.p+'</td><td>'+x.pti+'</td></tr>').join("");
 }
 </script></body></html>
