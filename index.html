@@ -106,7 +106,7 @@ function rememberTeam(t){try{localStorage.setItem("portal-team",t)}catch(e){}}
 function updateTeamUrl(t){const u=new URL(location.href);u.searchParams.set("squadra",t);history.replaceState(null,"",u.pathname+u.search+u.hash)}
 
 function pos(){const r=$("search").getBoundingClientRect();$("results").style.left=Math.max(8,r.left)+"px";$("results").style.top=(r.bottom+7)+"px";$("results").style.width=Math.min(r.width,innerWidth-16)+"px";$("results").style.maxHeight=Math.max(150,Math.min(430,innerHeight-r.bottom-18))+"px"}
-function show(q=""){const n=norm(q),h=n?teams.filter(t=>norm(t).includes(n)):teams;$("results").innerHTML=h.map(t=>{const cs=teamCompetitions(t);return '<button data-t="'+esc(t)+'"><strong>'+esc(t)+'</strong><small>'+cs.length+' '+(cs.length===1?'competizione':'competizioni')+'</small></button>'}).join("");if(h.length){pos();$("results").style.display="block"}else $("results").style.display="none";[...$("results").querySelectorAll("button")].forEach(b=>b.onclick=()=>selectTeam(b.dataset.t))}
+function show(q=""){const n=norm(q);let remembered=null;try{remembered=resolveTeam(localStorage.getItem("portal-team"))}catch(e){}let h=n?teams.filter(t=>norm(t).includes(n)):teams.slice();if(!n&&remembered)h=[remembered,...h.filter(t=>t!==remembered)];$("results").innerHTML=h.map(t=>{const cs=teamCompetitions(t),last=!n&&remembered===t;return '<button data-t="'+esc(t)+'"><strong>'+esc(t)+'</strong><small>'+(last?'Ultima squadra · ':'')+cs.length+' '+(cs.length===1?'competizione':'competizioni')+'</small></button>'}).join("");if(h.length){pos();$("results").style.display="block"}else $("results").style.display="none";[...$("results").querySelectorAll("button")].forEach(b=>b.onclick=()=>selectTeam(b.dataset.t))}
 $("search").onfocus=e=>show(e.target.value);$("search").oninput=e=>show(e.target.value);addEventListener("resize",()=>{$("results").style.display==="block"&&pos()});addEventListener("scroll",()=>{$("results").style.display==="block"&&pos()},{passive:true});document.addEventListener("click",e=>{if(e.target!==$("search")&&!$("results").contains(e.target))$("results").style.display="none"});
 $("change").onclick=()=>{$("search").value="";$("competitionContent").style.display="none";scrollTo({top:0,behavior:"smooth"});setTimeout(()=>{$("search").focus();show("")},250)};
 $("share").onclick=async()=>{
@@ -142,7 +142,5 @@ function selectCompetition(id){
   $("tbody").innerHTML=rows.map((x,i)=>'<tr class="'+(canon(x.team)===t?"me":"")+'"><td>'+(i+1)+'</td><td>'+esc(x.team)+'</td><td>'+x.pg+'</td><td>'+x.v+'</td><td>'+x.n+'</td><td>'+x.p+'</td><td>'+x.pti+'</td></tr>').join("");
 }
 const requestedTeam=resolveTeam(new URLSearchParams(location.search).get("squadra"));
-let rememberedTeam=null;try{rememberedTeam=resolveTeam(localStorage.getItem("portal-team"))}catch(e){}
-const initialTeam=requestedTeam||rememberedTeam;
-if(initialTeam){selectTeam(initialTeam)}
+if(requestedTeam){selectTeam(requestedTeam)}
 </script></body></html>
