@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "Nuovo Centro Coteto",
-  "short_name": "Coteto",
+  "name": "Portale NCC",
+  "short_name": "Portale NCC",
   "description": "Portale squadre: calendari, classifiche e competizioni del Nuovo Centro Coteto.",
   "lang": "it",
   "start_url": "/",
