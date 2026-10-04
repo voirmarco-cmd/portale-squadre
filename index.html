@@ -35,6 +35,7 @@ html[data-theme="dark"]{--bg:#151212;--card:#282324;--ink:#f5f0eb;--muted:#b9afa
 .competition-content{display:none}
 .ios-install{display:none;margin:0 0 10px;background:linear-gradient(135deg,#fff3b8,#ffe998);color:#241f16;border:1px solid #e2c75b;border-radius:16px;padding:12px 42px 12px 13px;position:relative;box-shadow:0 5px 16px rgba(90,70,10,.10)}.ios-install strong{display:block;font-size:15px;line-height:1.15}.ios-install p{margin:3px 0 7px;font-size:12px;line-height:1.25}.ios-install .ios-how{font-size:13px;font-weight:800}.ios-install .ios-share{font-size:18px;vertical-align:-1px;margin-right:4px}.ios-install-close{position:absolute;right:8px;top:7px;width:32px;height:32px;border:0;background:transparent;color:#241f16;font-size:23px;line-height:1;cursor:pointer;border-radius:9px}.ios-install-close:active{background:rgba(0,0,0,.07)}
 @media(max-width:760px){.wrap{padding:9px 10px 34px}.hero{padding:15px 14px 16px;border-radius:18px}.logo{width:58px;height:58px;border-radius:13px}.brand{margin-bottom:6px}.brandname{font-size:21px}.brandsub{margin-top:5px}.hero h1{font-size:38px}.hero p{font-size:14px}.chip{padding:6px 9px}.searchbox input{padding:14px 15px}.grid{grid-template-columns:1fr}.teamhead{align-items:flex-start;flex-direction:column}.next{padding:18px 16px}.fixture{grid-template-columns:92px 1fr;gap:9px 12px}.fixture .tag{grid-column:2;justify-self:start}.when{font-size:16px}.card{padding:15px;border-radius:16px}.competition-shell{border-radius:16px}}
+.notify-card{margin:14px 0 0;display:none;align-items:center;justify-content:space-between;gap:12px;padding:13px 14px;border:1px solid rgba(146,123,37,.32);border-radius:15px;background:var(--softgold);color:var(--ink)}.notify-card.show{display:flex}.notify-copy{font-size:13px;line-height:1.25}.notify-copy strong{display:block;font-size:14px}.notify-btn{flex:0 0 auto;border:0;border-radius:11px;padding:10px 13px;background:var(--a);color:#fff;font-weight:850;cursor:pointer}.notify-btn:disabled{opacity:.65}.notify-status{margin-top:3px;color:var(--muted);font-size:11px}@media(max-width:560px){.notify-card{align-items:stretch;flex-direction:column}.notify-btn{width:100%}}
 .privacy-footer{margin:24px 0 0;padding:15px 4px 0;border-top:1px solid var(--line);text-align:center;color:var(--muted);font-size:12px}.privacy-footer a{color:var(--muted);font-weight:700;text-decoration:underline;text-underline-offset:3px}
 </style></head><body>
 <div class="wrap"><aside class="ios-install" id="iosInstall" aria-label="Installa Portale NCC"><button class="ios-install-close" id="iosInstallClose" type="button" aria-label="Chiudi">×</button><strong>Installa Portale NCC sul tuo iPhone</strong><p>Accesso rapido a calendario, classifica e partite.</p><div class="ios-how"><span class="ios-share">⇧</span> Condividi &nbsp;→&nbsp; Aggiungi alla schermata Home</div></aside><section class="hero"><button class="theme-toggle" id="themeToggle" type="button" aria-label="Attiva modalità notte" title="Cambia tema">☾</button>
@@ -43,7 +44,7 @@ html[data-theme="dark"]{--bg:#151212;--card:#282324;--ink:#f5f0eb;--muted:#b9afa
 <div class="pub"><span class="chip"><b>● Ufficiale</b></span><span class="chip" id="updated"></span></div>
 <div class="searchbox"><input id="search" autocomplete="off" placeholder="Cerca la tua squadra…" aria-label="Cerca squadra"></div></div></section>
 <div class="results" id="results"></div><div class="intro">I dati cambiano solo quando pubblichiamo un nuovo aggiornamento ufficiale.</div>
-<div class="empty" id="empty">Tocca il campo di ricerca per vedere tutte le squadre in ordine alfabetico.</div>
+<div class="notify-card" id="notifyCard"><div class="notify-copy"><strong>🔔 Ricevi gli aggiornamenti</strong><span>Attiva le notifiche per calendario e comunicazioni importanti.</span><div class="notify-status" id="notifyStatus"></div></div><button class="notify-btn" id="notifyBtn" type="button">Attiva notifiche</button></div><div class="empty" id="empty">Tocca il campo di ricerca per vedere tutte le squadre in ordine alfabetico.</div>
 <main class="dashboard" id="dash"><div class="teamhead"><div><div class="eyebrow">Scheda squadra</div><h2 id="teamName"></h2><div class="meta" id="teamMeta"></div></div><div class="team-actions"><button class="share" id="share" type="button">Condividi</button><button class="favorite" id="favorite" type="button" aria-label="Imposta come squadra preferita" title="Imposta come squadra preferita">☆ Preferita</button><button class="change" id="change" type="button">Cambia squadra</button></div></div>
 <section class="competition-shell"><div class="eyebrow">Le tue competizioni</div><h3>Scegli cosa vuoi consultare</h3><div class="meta">Una squadra può partecipare a più tornei, campionati e discipline.</div><div class="competition-tabs" id="competitionTabs"></div></section>
 <div class="competition-content" id="competitionContent"><div class="competition-bar"><div><div class="eyebrow" id="competitionSport"></div><h3 id="competitionName"></h3></div><span class="competition-badge" id="competitionType"></span></div>
@@ -191,4 +192,33 @@ $("search").addEventListener("input",()=>{if(!searchTracked){searchTracked=true;
 const requestedTeam=resolveTeam(new URLSearchParams(location.search).get("squadra"));
 const preferredTeam=favoriteTeam();
 if(requestedTeam){selectTeam(requestedTeam)}else if(preferredTeam){selectTeam(preferredTeam)}
-</script></body></html>
+</script>
+<script>
+(function(){
+ const card=document.getElementById("notifyCard"),btn=document.getElementById("notifyBtn"),status=document.getElementById("notifyStatus");
+ const supported=("serviceWorker" in navigator)&&("PushManager" in window)&&("Notification" in window);
+ if(!card||!btn||!supported)return;
+ card.classList.add("show");
+ function b64(s){const p="=".repeat((4-s.length%4)%4),b=(s+p).replace(/-/g,"+").replace(/_/g,"/"),raw=atob(b),a=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)a[i]=raw.charCodeAt(i);return a}
+ async function refresh(){
+   if(Notification.permission==="denied"){btn.disabled=true;btn.textContent="Notifiche bloccate";status.textContent="Puoi riattivarle dalle impostazioni del browser.";return}
+   const reg=await navigator.serviceWorker.register("/sw.js");
+   const sub=await reg.pushManager.getSubscription();
+   if(sub){btn.textContent="Notifiche attive";btn.disabled=true;status.textContent="Riceverai gli aggiornamenti del Portale NCC.";}
+ }
+ btn.addEventListener("click",async()=>{
+   btn.disabled=true;status.textContent="Attivazione…";
+   try{
+     const perm=await Notification.requestPermission();if(perm!=="granted")throw new Error("permission");
+     const reg=await navigator.serviceWorker.ready;
+     const keyRes=await fetch("/api/push-key",{cache:"no-store"});if(!keyRes.ok)throw new Error("key");
+     const {publicKey}=await keyRes.json();
+     let sub=await reg.pushManager.getSubscription();if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64(publicKey)});
+     const save=await fetch("/api/subscribe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(sub)});if(!save.ok)throw new Error("save");
+     btn.textContent="Notifiche attive";status.textContent="Riceverai gli aggiornamenti del Portale NCC.";
+   }catch(e){btn.disabled=false;btn.textContent="Riprova";status.textContent=Notification.permission==="denied"?"Notifiche bloccate nelle impostazioni del browser.":"Non sono riuscito ad attivarle. Riprova tra poco.";}
+ });
+ refresh().catch(()=>{});
+})();
+</script>
+</body></html>
