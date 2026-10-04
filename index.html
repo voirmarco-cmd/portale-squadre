@@ -6,7 +6,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Portale NCC">
-<meta name="theme-color" content="#8f1022"><title>Portale Squadre · Nuovo Centro Coteto</title>
+<meta name="theme-color" content="#8f1022"><title>Portale Squadre · A.S.D. Nuovo Centro Coteto</title>
 <script>
   window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
 </script>
@@ -38,7 +38,7 @@ html[data-theme="dark"]{--bg:#151212;--card:#282324;--ink:#f5f0eb;--muted:#b9afa
 .privacy-footer{margin:24px 0 0;padding:15px 4px 0;border-top:1px solid var(--line);text-align:center;color:var(--muted);font-size:12px}.privacy-footer a{color:var(--muted);font-weight:700;text-decoration:underline;text-underline-offset:3px}
 </style></head><body>
 <div class="wrap"><aside class="ios-install" id="iosInstall" aria-label="Installa Portale NCC"><button class="ios-install-close" id="iosInstallClose" type="button" aria-label="Chiudi">×</button><strong>Installa Portale NCC sul tuo iPhone</strong><p>Accesso rapido a calendario, classifica e partite.</p><div class="ios-how"><span class="ios-share">⇧</span> Condividi &nbsp;→&nbsp; Aggiungi alla schermata Home</div></aside><section class="hero"><button class="theme-toggle" id="themeToggle" type="button" aria-label="Attiva modalità notte" title="Cambia tema">☾</button>
-<div class="brand"><img class="logo" src="https://www.nuovocentrocoteto.com/foto/grandi/14022206_949163905194476_5006398531968250337_ncustom2-1.png" alt="Nuovo Centro Coteto"><div><div class="brandname">Nuovo Centro Coteto</div><div class="brandsub">Portale competizioni</div></div></div>
+<div class="brand"><img class="logo" src="https://www.nuovocentrocoteto.com/foto/grandi/14022206_949163905194476_5006398531968250337_ncustom2-1.png" alt="A.S.D. Nuovo Centro Coteto"><div><div class="brandname">A.S.D. Nuovo Centro Coteto</div><div class="brandsub">Portale competizioni</div></div></div>
 <div class="content"><div class="goldline"></div><h1>La tua squadra, al volo!</h1><p>Cerca una squadra, poi scegli la competizione che ti interessa.</p>
 <div class="pub"><span class="chip"><b>● Ufficiale</b></span><span class="chip" id="updated"></span></div>
 <div class="searchbox"><input id="search" autocomplete="off" placeholder="Cerca la tua squadra…" aria-label="Cerca squadra"></div></div></section>
@@ -53,7 +53,7 @@ html[data-theme="dark"]{--bg:#151212;--card:#282324;--ink:#f5f0eb;--muted:#b9afa
 <section class="card"><div class="eyebrow">Calendario</div><h3>Partite</h3><div class="list" id="fixtures"></div></section>
 <section class="card"><div class="eyebrow">Marcatori</div><h3>Marcatori squadra</h3><div id="scorers"></div></section>
 </div>
-</div></main></div><footer class="privacy-footer">Nuovo Centro Coteto · <a href="/privacy.html">Privacy</a></footer>
+</div></main></div><footer class="privacy-footer">A.S.D. Nuovo Centro Coteto · <a href="/privacy.html">Privacy</a></footer>
 <script>
 (function(){
   const ua=navigator.userAgent||"";
@@ -139,7 +139,7 @@ $("favorite").onclick=()=>{if(!selectedTeam)return;try{const active=favoriteTeam
 $("share").onclick=async()=>{
   if(!selectedTeam)return;
   const url=teamUrl(selectedTeam);
-  const data={title:selectedTeam+" · Nuovo Centro Coteto",text:"Consulta calendario e classifica di "+selectedTeam,url};
+  const data={title:selectedTeam+" · A.S.D. Nuovo Centro Coteto",text:"Consulta calendario e classifica di "+selectedTeam,url};
   analyticsEvent("Team Shared",{team:selectedTeam,method:navigator.share?"native":"clipboard"});
   try{
     if(navigator.share){await navigator.share(data);return}
