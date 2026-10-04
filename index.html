@@ -143,10 +143,14 @@ $("share").onclick=async()=>{
   if(!selectedTeam)return;
   const url=teamUrl(selectedTeam);
   const data={title:selectedTeam+" · Nuovo Centro Coteto",text:"Consulta calendario e classifica di "+selectedTeam,url};
-  analyticsEvent("Team Shared",{team:selectedTeam,method:navigator.share?"native":"clipboard"});
   try{
-    if(navigator.share){await navigator.share(data);return}
+    if(navigator.share){
+      await navigator.share(data);
+      analyticsEvent("Team Shared",{team:selectedTeam,method:"native"});
+      return;
+    }
     await navigator.clipboard.writeText(url);
+    analyticsEvent("Team Shared",{team:selectedTeam,method:"clipboard"});
     const b=$("share"),old=b.textContent;b.textContent="Link copiato";setTimeout(()=>b.textContent=old,1400);
   }catch(e){}
 };
