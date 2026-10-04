@@ -112,6 +112,7 @@ const PORTAL={
   }]
 };
 const $=id=>document.getElementById(id);
+function analyticsEvent(name,data={}){try{window.va?.("event",{name,data})}catch(e){}}
 const canon=s=>(s||"").replaceAll("*","").trim();
 function compTeams(c){const set=new Set();Object.values(c.groups||{}).forEach(ts=>(ts||[]).forEach(t=>set.add(canon(t))));return set}
 PORTAL.competitions.forEach(c=>c._teams=compTeams(c));
@@ -132,12 +133,13 @@ function updateTeamUrl(t){const u=new URL(location.href);u.searchParams.set("squ
 function pos(){const r=$("search").getBoundingClientRect();$("results").style.left=Math.max(8,r.left)+"px";$("results").style.top=(r.bottom+7)+"px";$("results").style.width=Math.min(r.width,innerWidth-16)+"px";$("results").style.maxHeight=Math.max(150,Math.min(430,innerHeight-r.bottom-18))+"px"}
 function show(q=""){const n=norm(q);let remembered=null;try{remembered=resolveTeam(localStorage.getItem("portal-team"))}catch(e){}let h=n?teams.filter(t=>norm(t).includes(n)):teams.slice();if(!n&&remembered)h=[remembered,...h.filter(t=>t!==remembered)];$("results").innerHTML=h.map(t=>{const cs=teamCompetitions(t),last=!n&&remembered===t;return '<button data-t="'+esc(t)+'"><strong>'+esc(t)+'</strong><small>'+(last?'Ultima squadra · ':'')+cs.length+' '+(cs.length===1?'competizione':'competizioni')+'</small></button>'}).join("");if(h.length){pos();$("results").style.display="block"}else $("results").style.display="none";[...$("results").querySelectorAll("button")].forEach(b=>b.onclick=()=>selectTeam(b.dataset.t))}
 $("search").onfocus=e=>{if(selectedTeam&&resolveTeam(e.target.value)===selectedTeam)e.target.value="";show(e.target.value)};$("search").oninput=e=>show(e.target.value);addEventListener("resize",()=>{$("results").style.display==="block"&&pos()});addEventListener("scroll",()=>{$("results").style.display==="block"&&pos()},{passive:true});document.addEventListener("click",e=>{if(e.target!==$("search")&&!$("results").contains(e.target))$("results").style.display="none"});
-$("change").onclick=()=>{$("search").value="";$("competitionContent").style.display="none";scrollTo({top:0,behavior:"smooth"});setTimeout(()=>{$("search").focus();show("")},250)};
-$("favorite").onclick=()=>{if(!selectedTeam)return;try{const active=favoriteTeam()===selectedTeam;if(active)localStorage.removeItem("portal-favorite-team");else localStorage.setItem("portal-favorite-team",selectedTeam);updateFavoriteButton(selectedTeam)}catch(e){}};
+$("change").onclick=()=>{analyticsEvent("Change Team");$("search").value="";$("competitionContent").style.display="none";scrollTo({top:0,behavior:"smooth"});setTimeout(()=>{$("search").focus();show("")},250)};
+$("favorite").onclick=()=>{if(!selectedTeam)return;try{const active=favoriteTeam()===selectedTeam;if(active){localStorage.removeItem("portal-favorite-team");analyticsEvent("Favorite Removed",{team:selectedTeam})}else{localStorage.setItem("portal-favorite-team",selectedTeam);analyticsEvent("Favorite Added",{team:selectedTeam})}updateFavoriteButton(selectedTeam)}catch(e){}};
 $("share").onclick=async()=>{
   if(!selectedTeam)return;
   const url=teamUrl(selectedTeam);
   const data={title:selectedTeam+" · Nuovo Centro Coteto",text:"Consulta calendario e classifica di "+selectedTeam,url};
+  analyticsEvent("Team Shared",{team:selectedTeam,method:navigator.share?"native":"clipboard"});
   try{
     if(navigator.share){await navigator.share(data);return}
     await navigator.clipboard.writeText(url);
@@ -157,6 +159,7 @@ function fixtureCountdown(dateText,competitionName){
 }
 let selectedTeam=null,selectedCompetitionId=null;
 function selectTeam(t){
+  analyticsEvent("Team Selected",{team:t});
   selectedTeam=t;rememberTeam(t);updateTeamUrl(t);$("search").value=t;$("results").style.display="none";$("empty").style.display="none";$("dash").style.display="block";
   const cs=teamCompetitions(t);$("teamName").textContent=t;$("teamMeta").textContent=cs.length+" "+(cs.length===1?"competizione attiva":"competizioni attive");updateFavoriteButton(t);
   $("competitionTabs").innerHTML=cs.map((c,i)=>'<button class="competition-tab" data-id="'+esc(c.id)+'"><span class="ctitle">'+esc(c.name)+'</span><span class="cmeta">'+esc(c.sport)+' · '+esc(c.type)+'</span></button>').join("");
@@ -165,6 +168,7 @@ function selectTeam(t){
   setTimeout(()=>$("teamName").scrollIntoView({behavior:"smooth",block:"start"}),50);
 }
 function selectCompetition(id){
+  analyticsEvent("Competition Viewed",{competition:id,team:selectedTeam||""});
   selectedCompetitionId=id;const c=PORTAL.competitions.find(x=>x.id===id);const t=selectedTeam;if(!c||!t)return;
   [...$("competitionTabs").querySelectorAll(".competition-tab")].forEach(b=>b.classList.toggle("active",b.dataset.id===id));
   $("competitionContent").style.display="block";$("competitionSport").textContent=c.sport;$("competitionName").textContent=c.name;$("competitionType").textContent=c.type;
@@ -176,6 +180,13 @@ function selectCompetition(id){
   const cs=(c.scorers||[]).filter(x=>canon(x.team)===t).sort((a,b)=>b.goals-a.goals||a.name.localeCompare(b.name,"it"));$("scorers").innerHTML=cs.length?cs.map(x=>'<div class="scorer-row"><div class="scorer-goals">'+esc(x.goals)+'</div><div class="scorer-name">'+esc(x.name)+'</div></div>').join(""):'<div class="empty2">Nessun marcatore ancora pubblicato.</div>';
   $("tbody").innerHTML=rows.map((x,i)=>'<tr class="'+(canon(x.team)===t?"me":"")+'"><td>'+(i+1)+'</td><td>'+esc(x.team)+'</td><td>'+x.pg+'</td><td>'+x.v+'</td><td>'+x.n+'</td><td>'+x.p+'</td><td>'+x.pti+'</td></tr>').join("");
 }
+const standaloneMode=window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+if(standaloneMode){
+  analyticsEvent("Standalone Open");
+  try{if(localStorage.getItem("portal-standalone-first-open")!=="1"){analyticsEvent("Standalone First Open");localStorage.setItem("portal-standalone-first-open","1")}}catch(e){}
+}
+let searchTracked=false;
+$("search").addEventListener("input",()=>{if(!searchTracked){searchTracked=true;analyticsEvent("Search Used")}});
 const requestedTeam=resolveTeam(new URLSearchParams(location.search).get("squadra"));
 const preferredTeam=favoriteTeam();
 if(requestedTeam){selectTeam(requestedTeam)}else if(preferredTeam){selectTeam(preferredTeam)}
