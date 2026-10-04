@@ -53,3 +53,36 @@ Questo consente di aggiungere nel tempo, senza cambiare il flusso principale del
 - ulteriori discipline e competizioni.
 
 Il sito pubblico non legge mai i Google Sheets in diretta.
+
+
+## Archivio storico e statistiche (interno, non visibile)
+
+Il portale deve iniziare a conservare, durante ogni pubblicazione ufficiale, i dati elementari necessari a costruire in futuro statistiche e record storici. Questa funzione resta per ora completamente invisibile nell'interfaccia pubblica.
+
+Principi:
+
+- non salvare soltanto statistiche derivate (es. "miglior vittoria"), ma conservare i singoli eventi da cui potranno essere ricalcolate;
+- identificare ogni gara in modo stabile almeno tramite competizione/edizione, data, turno, squadre e, quando disponibili, ora e campo;
+- per ogni gara conclusa conservare risultato, gol casa e gol ospite;
+- mantenere separate competizione, edizione/stagione e disciplina/formato, così da poter calcolare record per competizione oppure trasversali;
+- conservare le marcature con data, squadra, giocatore e numero di reti anche quando il foglio sorgente non le associa esplicitamente a una partita;
+- associare automaticamente le marcature a una gara soltanto quando data + squadra rendono l'abbinamento univoco;
+- usare la somma delle marcature della squadra come controllo rispetto ai gol segnati nella gara;
+- se il totale dei marcatori non coincide con il risultato, oppure esistono più gare compatibili nello stesso giorno, non inventare l'associazione: il risultato resta valido e il dettaglio marcatori resta incompleto/non associato;
+- non cancellare lo storico quando una competizione smette di essere attiva nel portale.
+
+Questa base dovrà permettere in futuro di ricavare automaticamente, senza modificare il modo di compilare i fogli, statistiche quali miglior vittoria, peggior sconfitta, partita con più gol, maggior scarto, capocannonieri per competizione e assoluti, doppiette/triplette, serie e altri record storici NCC.
+
+### Schema logico interno previsto
+
+Una gara storicizzata deve poter essere rappresentata almeno con:
+
+`matchId, competitionId, edition, sport, date, round, time, field, home, away, homeGoals, awayGoals`
+
+Una marcatura elementare deve poter essere rappresentata almeno con:
+
+`date, team, player, goals, matchId|null, associationStatus`
+
+`associationStatus` deve distinguere almeno i casi `matched`, `unmatched` e `ambiguous`.
+
+In fase di **PUBBLICA PORTALE SQUADRE**, oltre allo snapshot pubblico, va quindi preservato/aggiornato l'archivio storico interno secondo queste regole. L'eventuale esposizione delle statistiche nel sito sarà una funzione separata da implementare solo quando richiesta.
