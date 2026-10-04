@@ -216,7 +216,7 @@ if(requestedTeam){selectTeam(requestedTeam)}else if(preferredTeam){selectTeam(pr
      let sub=await reg.pushManager.getSubscription();if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64(publicKey)});
      const save=await fetch("/api/subscribe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(sub)});if(!save.ok)throw new Error("save");
      btn.textContent="Notifiche attive";status.textContent="Riceverai gli aggiornamenti del Portale NCC.";
-   }catch(e){btn.disabled=false;btn.textContent="Riprova";status.textContent=Notification.permission==="denied"?"Notifiche bloccate nelle impostazioni del browser.":"Non sono riuscito ad attivarle. Riprova tra poco.";}
+   }catch(e){btn.disabled=false;btn.textContent="Riprova";status.textContent=Notification.permission==="denied"?"Notifiche bloccate nelle impostazioni del browser.":"Errore: "+(e&&e.message?e.message:"attivazione non riuscita");}
  });
  refresh().catch(()=>{});
 })();
