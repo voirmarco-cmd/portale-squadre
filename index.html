@@ -213,7 +213,13 @@ if(requestedTeam){selectTeam(requestedTeam)}else if(preferredTeam){selectTeam(pr
      const reg=await navigator.serviceWorker.ready;
      const keyRes=await fetch("/api/push-key",{cache:"no-store"});if(!keyRes.ok)throw new Error("key");
      const {publicKey}=await keyRes.json();
-     let sub=await reg.pushManager.getSubscription();if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64(publicKey)});
+     const appKey=b64(publicKey);if(appKey.length!==65||appKey[0]!==4)throw new Error("Chiave push non valida ("+appKey.length+" byte)");
+     let sub=await reg.pushManager.getSubscription();
+     if(sub&&sub.options&&sub.options.applicationServerKey){
+       const old=new Uint8Array(sub.options.applicationServerKey);
+       if(old.length!==appKey.length||old.some((v,i)=>v!==appKey[i])){await sub.unsubscribe();sub=null;}
+     }
+     if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:appKey});
      const save=await fetch("/api/subscribe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(sub)});if(!save.ok)throw new Error("save");
      btn.textContent="Notifiche attive";status.textContent="Riceverai gli aggiornamenti del Portale NCC.";
    }catch(e){btn.disabled=false;btn.textContent="Riprova";status.textContent=Notification.permission==="denied"?"Notifiche bloccate nelle impostazioni del browser.":"Errore: "+(e&&e.message?e.message:"attivazione non riuscita");}
