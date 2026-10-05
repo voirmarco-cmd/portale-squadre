@@ -212,6 +212,13 @@ function openPortalModal(id){$(id).classList.add("open");document.body.style.ove
 function closePortalModals(){document.querySelectorAll(".portal-modal.open").forEach(x=>x.classList.remove("open"));if(!$("generalPage").classList.contains("open"))document.body.style.overflow=""}
 function activeCompetition(){return PORTAL.competitions.find(x=>x.id===selectedCompetitionId)||PORTAL.competitions[0]}
 
+function renderPublicCompetitions(){
+ const host=$("publicCompetitionList"); if(!host)return;
+ host.innerHTML=PORTAL.competitions.map(c=>'<article class="public-comp-card"><div class="eyebrow">'+esc(c.sport)+'</div><div class="public-comp-name">'+esc(c.name)+'</div><div class="public-comp-meta">'+c._teams.size+' squadre · '+esc(c.type)+'</div><div class="tournament-actions"><button class="tournament-action public-results" data-id="'+esc(c.id)+'">Risultati</button><button class="tournament-action public-scorers" data-id="'+esc(c.id)+'">Top marcatori</button><button class="tournament-action public-general" data-id="'+esc(c.id)+'">Class. generale</button></div></article>').join("");
+ host.querySelectorAll(".public-results").forEach(b=>b.onclick=()=>{selectedCompetitionId=b.dataset.id;renderResults();openPortalModal("resultsModal")});
+ host.querySelectorAll(".public-scorers").forEach(b=>b.onclick=()=>{selectedCompetitionId=b.dataset.id;renderTop();openPortalModal("scorersModal")});
+ host.querySelectorAll(".public-general").forEach(b=>b.onclick=()=>{selectedCompetitionId=b.dataset.id;renderGeneral();$("generalPage").classList.add("open");$("generalPage").setAttribute("aria-hidden","false");document.body.style.overflow="hidden";$("generalPage").scrollTop=0});
+}
 function parseFixtureDate(f,c){
   const m=String(f.date||"").match(/(\d{1,2})\/(\d{1,2})/);if(!m)return null;
   const y=(String(c.name||"").match(/\b(20\d{2})\b/)||[])[1]||new Date().getFullYear();
