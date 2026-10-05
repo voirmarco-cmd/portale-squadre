@@ -69,8 +69,8 @@ html[data-theme="dark"]{--bg:#151212;--card:#282324;--ink:#f5f0eb;--muted:#b9afa
 <section class="card"><div class="eyebrow">Marcatori</div><h3>Marcatori squadra</h3><div id="scorers"></div></section>
 </div>
 </div></main></div>
-<div class="portal-modal" id="resultsModal" role="dialog" aria-modal="true" aria-labelledby="resultsModalTitle"><div class="portal-modal-card"><div class="portal-modal-head"><div><div class="eyebrow">Settimana corrente</div><h3 id="resultsModalTitle">Risultati</h3></div><button class="modal-close" type="button" data-close-modal aria-label="Chiudi">×</button></div><div class="demo-note">Anteprima · dati dimostrativi</div><div class="modal-body" id="weekResults"></div></div></div>
-<div class="portal-modal" id="scorersModal" role="dialog" aria-modal="true" aria-labelledby="scorersModalTitle"><div class="portal-modal-card"><div class="portal-modal-head"><div><div class="eyebrow">Top 10 del torneo</div><h3 id="scorersModalTitle">Top marcatori</h3></div><button class="modal-close" type="button" data-close-modal aria-label="Chiudi">×</button></div><div class="demo-note">Anteprima · dati dimostrativi</div><div class="modal-body" id="topScorersList"></div></div></div>
+<div class="portal-modal" id="resultsModal" role="dialog" aria-modal="true" aria-labelledby="resultsModalTitle"><div class="portal-modal-card"><div class="portal-modal-head"><div><div class="eyebrow">Settimana corrente</div><h3 id="resultsModalTitle">Risultati</h3></div><button class="modal-close" type="button" data-close-modal aria-label="Chiudi">×</button></div><div class="modal-body" id="weekResults"></div></div></div>
+<div class="portal-modal" id="scorersModal" role="dialog" aria-modal="true" aria-labelledby="scorersModalTitle"><div class="portal-modal-card"><div class="portal-modal-head"><div><div class="eyebrow">Top 10 del torneo</div><h3 id="scorersModalTitle">Top marcatori</h3></div><button class="modal-close" type="button" data-close-modal aria-label="Chiudi">×</button></div><div class="modal-body" id="topScorersList"></div></div></div>
 <div class="general-page" id="generalPage" aria-hidden="true"><div class="general-inner"><div class="general-head"><button class="general-back" id="generalBack" type="button">← Indietro</button><div class="general-title"><div class="eyebrow">Coppa Bartoli-Bassano C5 2026</div><h2>Classifica generale provvisoria</h2></div></div><div class="demo-note" style="margin:0 0 12px">Anteprima · dati dimostrativi · fasce definitive al termine dei gironi</div><div class="general-card" id="generalRanking"></div></div></div>
 <footer class="privacy-footer">A.S.D. Nuovo Centro Coteto · <a href="/privacy.html">Privacy</a></footer>
 <script>
@@ -208,43 +208,50 @@ function selectCompetition(id){
   $("tbody").innerHTML=rows.map((x,i)=>'<tr class="'+(canon(x.team)===t?"me":"")+'"><td>'+(i+1)+'</td><td>'+esc(x.team)+'</td><td>'+x.pg+'</td><td>'+x.v+'</td><td>'+x.n+'</td><td>'+x.p+'</td><td>'+x.pti+'</td></tr>').join("");
 }
 
-const DEMO_WEEK_RESULTS=[
-  {day:"Lun 5",home:"FC CISIPENSERA'",away:"RAIMON",score:"2–0"},
-  {day:"Lun 5",home:"I CACTUS",away:"EMT",score:"1–1"},
-  {day:"Lun 5",home:"FEMMY UNITED",away:"IDEALE FC",score:"1–2"},
-  {day:"Mar 6",home:"BRODO GLIMT",away:"CLUB AMERICA",score:"3–1"},
-  {day:"Mar 6",home:"LIVORNO UNITED",away:"REAL DOBAGLIO",score:"2–2"},
-  {day:"Mer 7",home:"DABDA",away:"PEAKY FC",score:"0–1"}
-];
-const DEMO_TOP_SCORERS=[
-  {name:"PROTTI IGOR",team:"IDEALE FC",goals:7},{name:"ROSSI MATTEO",team:"LIVORNO UNITED",goals:6},
-  {name:"BIANCHI LUCA",team:"PEAKY FC",goals:5},{name:"NERI ANDREA",team:"BRODO GLIMT",goals:5},
-  {name:"CONTI MARCO",team:"EMT",goals:4},{name:"GALLI TOMMASO",team:"I CACTUS",goals:4},
-  {name:"MORI SIMONE",team:"FEMMY UNITED",goals:4},{name:"RICCI DAVIDE",team:"DABDA",goals:3},
-  {name:"FERRI LEONARDO",team:"REAL DOBAGLIO",goals:3},{name:"COSTA FEDERICO",team:"CLUB AMERICA",goals:3}
-];
 function openPortalModal(id){$(id).classList.add("open");document.body.style.overflow="hidden"}
 function closePortalModals(){document.querySelectorAll(".portal-modal.open").forEach(x=>x.classList.remove("open"));if(!$("generalPage").classList.contains("open"))document.body.style.overflow=""}
-function renderDemoResults(){$("weekResults").innerHTML=DEMO_WEEK_RESULTS.map(x=>'<div class="week-result"><div class="week-day">'+esc(x.day)+'</div><div class="week-teams">'+esc(x.home)+'<br>'+esc(x.away)+'</div><div class="week-score">'+esc(x.score)+'</div></div>').join("")}
-function renderDemoTop(){$("topScorersList").innerHTML=DEMO_TOP_SCORERS.map((x,i)=>'<div class="top-row"><div class="top-pos">'+(i+1)+'</div><div><div class="top-name">'+esc(x.name)+'</div><span class="top-team">'+esc(x.team)+'</span></div><div class="top-goals">'+x.goals+'<small> gol</small></div></div>').join("")}
-function demoGeneralRows(){
-  const c=PORTAL.competitions.find(x=>x.id==="coppa-bartoli-bassano-c5-2026")||PORTAL.competitions[0],all=[];
-  Object.entries(c.standings||{}).forEach(([group,rows])=>(rows||[]).forEach((x,i)=>{
-    const seed=[...canon(x.team)].reduce((a,ch)=>a+ch.charCodeAt(0),0);
-    const pos=i+1,pti=Math.max(0,10-pos*2+(seed%5)),dr=(seed%13)-5,rf=4+(seed%14);
-    all.push({team:canon(x.team),group,pos,pti,dr,rf});
-  }));
+function activeCompetition(){return PORTAL.competitions.find(x=>x.id===selectedCompetitionId)||PORTAL.competitions[0]}
+
+function parseFixtureDate(f,c){
+  const m=String(f.date||"").match(/(\d{1,2})\/(\d{1,2})/);if(!m)return null;
+  const y=(String(c.name||"").match(/\b(20\d{2})\b/)||[])[1]||new Date().getFullYear();
+  return new Date(Number(y),Number(m[2])-1,Number(m[1]));
+}
+function currentWeekResults(c){
+  const now=new Date(),today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const monday=new Date(today);monday.setDate(today.getDate()-((today.getDay()+6)%7));
+  const sunday=new Date(monday);sunday.setDate(monday.getDate()+6);
+  return (c.fixtures||[]).filter(f=>{
+    if(!f.result)return false;const d=parseFixtureDate(f,c);return d&&d>=monday&&d<=sunday&&d<=today;
+  }).sort((a,b)=>parseFixtureDate(a,c)-parseFixtureDate(b,c)||String(a.time||"").localeCompare(String(b.time||"")));
+}
+function renderResults(){
+  const c=activeCompetition(),rows=currentWeekResults(c);
+  $("weekResults").innerHTML=rows.length?rows.map(x=>'<div class="week-result"><div class="week-day">'+esc(x.date)+'</div><div class="week-teams">'+esc(x.home)+'<br>'+esc(x.away)+'</div><div class="week-score">'+esc(String(x.result).replace("-", "–"))+'</div></div>').join(""):'<div class="empty2">Nessun risultato ancora pubblicato questa settimana.</div>';
+}
+function renderTop(){
+  const c=activeCompetition(),rows=[...(c.scorers||[])].filter(x=>Number(x.goals)>0).sort((a,b)=>Number(b.goals)-Number(a.goals)||String(a.name).localeCompare(String(b.name),"it")).slice(0,10);
+  $("topScorersList").innerHTML=rows.length?rows.map((x,i)=>'<div class="top-row"><div class="top-pos">'+(i+1)+'</div><div><div class="top-name">'+esc(x.name)+'</div><span class="top-team">'+esc(x.team)+'</span></div><div class="top-goals">'+esc(x.goals)+'<small> gol</small></div></div>').join(""):'<div class="empty2">Nessun marcatore ancora pubblicato.</div>';
+}
+function generalRows(c){
+  const all=[];
+  Object.entries(c.standings||{}).forEach(([group,rows])=>{
+    const sorted=[...(rows||[])].sort((a,b)=>(b.pti-a.pti)||(b.dr-a.dr)||(b.rf-a.rf)||String(a.team).localeCompare(String(b.team),"it"));
+    sorted.forEach((x,i)=>all.push({team:canon(x.team),group,pos:i+1,pti:Number(x.pti)||0,dr:Number(x.dr)||0,rf:Number(x.rf)||0}));
+  });
   return all.sort((a,b)=>(a.pos-b.pos)||(b.pti-a.pti)||(b.dr-a.dr)||(b.rf-a.rf)||a.team.localeCompare(b.team,"it"));
 }
-function renderDemoGeneral(){
-  const rows=demoGeneralRows();let h='<div class="general-row head"><span>#</span><span>Squadra</span><span>Pos.</span><span>PTI</span><span>DR</span><span>GF</span></div>';
-  rows.forEach((x,i)=>{if(i<56&&i%8===0)h+='<div class="band-title">Fascia '+(Math.floor(i/8)+1)+' · posizioni '+(i+1)+'–'+(i+8)+'</div>';if(i===56)h+='<div class="band-title eliminated-band">Eliminata</div>';h+='<div class="general-row"><span class="rank">'+(i+1)+'</span><span class="gteam">'+esc(x.team)+'<span class="ggroup">Girone '+esc(x.group)+'</span></span><span class="num">'+x.pos+'ª</span><span class="num">'+x.pti+'</span><span class="num">'+(x.dr>0?"+":"")+x.dr+'</span><span class="num">'+x.rf+'</span></div>'});$("generalRanking").innerHTML=h;
+function renderGeneral(){
+  const c=activeCompetition(),rows=generalRows(c);
+  let h='<div class="general-row head"><span>#</span><span>Squadra</span><span>Pos.</span><span>PTI</span><span>DR</span><span>GF</span></div>';
+  rows.forEach((x,i)=>{if(i<56&&i%8===0)h+='<div class="band-title">Fascia '+(Math.floor(i/8)+1)+' · posizioni '+(i+1)+'–'+(i+8)+'</div>';if(i===56)h+='<div class="band-title eliminated-band">Eliminata</div>';h+='<div class="general-row"><span class="rank">'+(i+1)+'</span><span class="gteam">'+esc(x.team)+'<span class="ggroup">Girone '+esc(x.group)+'</span></span><span class="num">'+x.pos+'ª</span><span class="num">'+x.pti+'</span><span class="num">'+(x.dr>0?"+":"")+x.dr+'</span><span class="num">'+x.rf+'</span></div>'});
+  $("generalRanking").innerHTML=h;
 }
-$("resultsBtn").onclick=()=>{renderDemoResults();openPortalModal("resultsModal")};
-$("topScorersBtn").onclick=()=>{renderDemoTop();openPortalModal("scorersModal")};
+$("resultsBtn").onclick=()=>{renderResults();openPortalModal("resultsModal")};
+$("topScorersBtn").onclick=()=>{renderTop();openPortalModal("scorersModal")};
 document.querySelectorAll("[data-close-modal]").forEach(b=>b.onclick=closePortalModals);
 document.querySelectorAll(".portal-modal").forEach(m=>m.addEventListener("click",e=>{if(e.target===m)closePortalModals()}));
-$("generalBtn").onclick=()=>{renderDemoGeneral();$("generalPage").classList.add("open");$("generalPage").setAttribute("aria-hidden","false");document.body.style.overflow="hidden";$("generalPage").scrollTop=0};
+$("generalBtn").onclick=()=>{renderGeneral();$("generalPage").classList.add("open");$("generalPage").setAttribute("aria-hidden","false");document.body.style.overflow="hidden";$("generalPage").scrollTop=0};
 $("generalBack").onclick=()=>{$("generalPage").classList.remove("open");$("generalPage").setAttribute("aria-hidden","true");document.body.style.overflow=""};
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if($("generalPage").classList.contains("open"))$("generalBack").click();else closePortalModals()}});
 const standaloneMode=window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
