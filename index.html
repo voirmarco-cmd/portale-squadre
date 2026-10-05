@@ -217,7 +217,7 @@ function renderPublicCompetitions(){
  host.innerHTML=PORTAL.competitions.map(c=>'<article class="public-comp-card"><div class="eyebrow">'+esc(c.sport)+'</div><div class="public-comp-name">'+esc(c.name)+'</div><div class="public-comp-meta">'+c._teams.size+' squadre · '+esc(c.type)+'</div><div class="tournament-actions"><button class="tournament-action public-results" data-id="'+esc(c.id)+'">Risultati</button><button class="tournament-action public-scorers" data-id="'+esc(c.id)+'">Top marcatori</button><button class="tournament-action public-general" data-id="'+esc(c.id)+'">Classifiche</button></div></article>').join("");
  host.querySelectorAll(".public-results").forEach(b=>b.onclick=()=>{selectedCompetitionId=b.dataset.id;renderResults();openPortalModal("resultsModal")});
  host.querySelectorAll(".public-scorers").forEach(b=>b.onclick=()=>{selectedCompetitionId=b.dataset.id;renderTop();openPortalModal("scorersModal")});
- host.querySelectorAll(".public-general").forEach(b=>b.onclick=()=>{selectedCompetitionId=b.dataset.id;renderGeneral();$("generalPage").classList.add("open");$("generalPage").setAttribute("aria-hidden","false");document.body.style.overflow="hidden";$("generalPage").scrollTop=0});
+ host.querySelectorAll(".public-general").forEach(b=>b.onclick=()=>{selectedCompetitionId=b.dataset.id;openRankings()});
 }
 function parseFixtureDate(f,c){
   const m=String(f.date||"").match(/(\d{1,2})\/(\d{1,2})/);if(!m)return null;
@@ -240,6 +240,23 @@ function renderTop(){
   const c=activeCompetition(),rows=[...(c.scorers||[])].filter(x=>Number(x.goals)>0).sort((a,b)=>Number(b.goals)-Number(a.goals)||String(a.name).localeCompare(String(b.name),"it")).slice(0,10);
   $("topScorersList").innerHTML=rows.length?rows.map((x,i)=>'<div class="top-row"><div class="top-pos">'+(i+1)+'</div><div><div class="top-name">'+esc(x.name)+'</div><span class="top-team">'+esc(x.team)+'</span></div><div class="top-goals">'+esc(x.goals)+'<small> gol</small></div></div>').join(""):'<div class="empty2">Nessun marcatore ancora pubblicato.</div>';
 }
+function renderGroupRankings(){
+ const c=activeCompetition();$("rankingsCompetition").textContent=c.name;
+ const groups=Object.entries(c.standings||{}).sort((a,b)=>String(a[0]).localeCompare(String(b[0]),"it"));
+ $("groupsRankings").innerHTML=groups.map(([g,rows])=>{
+  const sorted=[...(rows||[])].sort((a,b)=>(b.pti-a.pti)||(b.dr-a.dr)||(b.rf-a.rf)||String(a.team).localeCompare(String(b.team),"it"));
+  return '<section class="group-ranking-card"><div class="group-ranking-title">Girone '+esc(g)+'</div><div class="group-tablewrap"><table class="group-table"><thead><tr><th>#</th><th>Squadra</th><th>G</th><th>V</th><th>P</th><th>S</th><th>GF</th><th>GS</th><th>DR</th><th>PTI</th></tr></thead><tbody>'+sorted.map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(canon(x.team))+'</td><td>'+x.pg+'</td><td>'+x.v+'</td><td>'+x.n+'</td><td>'+x.p+'</td><td>'+x.rf+'</td><td>'+x.rs+'</td><td>'+(Number(x.dr)>0?"+":"")+x.dr+'</td><td><strong>'+x.pti+'</strong></td></tr>').join("")+'</tbody></table></div></section>';
+ }).join("");
+}
+function showRankingsView(view){
+ const groups=view!=="overall";
+ $("groupsRankings").style.display=groups?"block":"none";$("generalRanking").style.display=groups?"none":"block";
+ $("groupsTab").classList.toggle("active",groups);$("overallTab").classList.toggle("active",!groups);
+ if(groups)renderGroupRankings();else renderGeneral();
+}
+function openRankings(){
+ showRankingsView("groups");$("generalPage").classList.add("open");$("generalPage").setAttribute("aria-hidden","false");document.body.style.overflow="hidden";$("generalPage").scrollTop=0;
+}
 function generalRows(c){
   const all=[];
   Object.entries(c.standings||{}).forEach(([group,rows])=>{
@@ -258,7 +275,9 @@ $("resultsBtn").onclick=()=>{renderResults();openPortalModal("resultsModal")};
 $("topScorersBtn").onclick=()=>{renderTop();openPortalModal("scorersModal")};
 document.querySelectorAll("[data-close-modal]").forEach(b=>b.onclick=closePortalModals);
 document.querySelectorAll(".portal-modal").forEach(m=>m.addEventListener("click",e=>{if(e.target===m)closePortalModals()}));
-$("generalBtn").onclick=()=>{renderGeneral();$("generalPage").classList.add("open");$("generalPage").setAttribute("aria-hidden","false");document.body.style.overflow="hidden";$("generalPage").scrollTop=0};
+$("generalBtn").onclick=openRankings;
+$("groupsTab").onclick=()=>showRankingsView("groups");
+$("overallTab").onclick=()=>showRankingsView("overall");
 $("generalBack").onclick=()=>{$("generalPage").classList.remove("open");$("generalPage").setAttribute("aria-hidden","true");document.body.style.overflow=""};
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if($("generalPage").classList.contains("open"))$("generalBack").click();else closePortalModals()}});
 const standaloneMode=window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
