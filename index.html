@@ -133,8 +133,8 @@ const PORTAL={
 };
 const $=id=>document.getElementById(id);
 function analyticsEvent(name,data={}){
-  if(name!=="Team Shared")return;
-  fetch("/api/share-click",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({team:data.team||""}),keepalive:true}).catch(()=>{});
+  if(!["Team Shared","Favorite Added","Favorite Removed"].includes(name))return;
+  fetch("/api/share-click",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({event:name,team:data.team||""}),keepalive:true}).catch(()=>{});
 }
 const canon=s=>(s||"").replaceAll("*","").trim();
 function compTeams(c){const set=new Set();Object.values(c.groups||{}).forEach(ts=>(ts||[]).forEach(t=>set.add(canon(t))));return set}
