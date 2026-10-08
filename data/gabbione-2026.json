@@ -1,0 +1,97 @@
+{
+  "id": "gabbione-2026",
+  "name": "GABBIONE 2026",
+  "sport": "Gabbione",
+  "status": "draft",
+  "source": "Composizione squadre e gironi fornita dall'organizzatore l'8 ottobre 2026",
+  "teams": [
+    {
+      "name": "AMARANTO RACING",
+      "aliases": []
+    },
+    {
+      "name": "BOCA MARE E SOLE",
+      "aliases": []
+    },
+    {
+      "name": "CARR. LABRONICA",
+      "aliases": [
+        "CARROZZERIA LABRONICA"
+      ]
+    },
+    {
+      "name": "EST. ACQUAVIVA",
+      "aliases": [
+        "ESTUDIANTES ACQUAVIVA"
+      ]
+    },
+    {
+      "name": "FABIO & FRIENDS",
+      "aliases": []
+    },
+    {
+      "name": "FC JAMAICA",
+      "aliases": []
+    },
+    {
+      "name": "JAMBOREE LIVORNO",
+      "aliases": []
+    },
+    {
+      "name": "LEGHORN 1915 CAFF. DAME'",
+      "aliases": [
+        "LEGHORN 1915"
+      ]
+    },
+    {
+      "name": "LIVING BAR",
+      "aliases": []
+    },
+    {
+      "name": "OLD BASTARD",
+      "aliases": []
+    },
+    {
+      "name": "OLD PETRARCA",
+      "aliases": []
+    },
+    {
+      "name": "OSTRICONDA 2022",
+      "aliases": []
+    },
+    {
+      "name": "ZERI FC",
+      "aliases": []
+    }
+  ],
+  "groups": {
+    "A": [
+      "AMARANTO RACING",
+      "LIVING BAR",
+      "OLD PETRARCA",
+      "ZERI FC"
+    ],
+    "B": [
+      "CARR. LABRONICA",
+      "JAMBOREE LIVORNO",
+      "LEGHORN 1915 CAFF. DAME'"
+    ],
+    "C": [
+      "OLD BASTARD",
+      "EST. ACQUAVIVA",
+      "OSTRICONDA 2022"
+    ],
+    "D": [
+      "FC JAMAICA",
+      "BOCA MARE E SOLE",
+      "FABIO & FRIENDS"
+    ]
+  },
+  "fixtures": [],
+  "standings": {},
+  "scorers": [],
+  "notes": [
+    "Nessun calendario, risultato o marcatore fornito: non inventare.",
+    "LEGHORN 1915 è alias della denominazione completa nella lista; verificare gli altri eventuali alias prima di unificare identità."
+  ]
+}
