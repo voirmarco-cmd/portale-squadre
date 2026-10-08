@@ -275,7 +275,7 @@ function qualificationInfo(c){
 function renderGroupRankings(){
  const c=activeCompetition();$("rankingsCompetition").textContent=c.name;
  const info=qualificationInfo(c),banner=$("qualificationBanner");
- $("rankingsTabs").style.display=info?"none":"flex";
+ $("rankingsTabs").style.display=info?"none":"grid";
  banner.style.display=info?"block":"none";
  banner.innerHTML=info?'<div class="qualification-title">Qualificazione alla fase finale</div><div class="qualification-row"><span class="qualification-tier gold">Fascia Oro</span>'+esc(info.gold)+'</div><div class="qualification-row"><span class="qualification-tier silver">Fascia Argento</span>'+esc(info.silver)+'</div>':"";
 
