@@ -1,0 +1,11 @@
+import {audit} from './calendar-audit.mjs';
+import assert from 'node:assert/strict';
+const row=(d,t,f,h,g,a,result='')=>{const r=Array(18).fill('');r[0]=d;r[1]=t;r[2]=f;r[4]=h;r[10]=g;r[11]=a;r[17]=result;return r;};
+const base={general:[row('mer 7/10','21:00','1','FC JUVENTUD','A','FTTN')],competitions:[{id:'bb',groupCodes:['A'],rows:[row('mer 7/10','21:00','1','FC JUVENTUD','A','FTTN','RINV')]}]};
+assert.equal(audit(base).ok,true);
+assert.equal(audit({...base,competitions:[{...base.competitions[0],rows:[row('mer 7/10','22:00','1','FC JUVENTUD','A','FTTN','RINV')]}]}).errors[0].code,'FIELD_MISMATCH');
+assert.equal(audit({...base,competitions:[{...base.competitions[0],rows:[]}]}).errors[0].code,'MISSING_IN_COMMUNICATO');
+assert.equal(audit({...base,competitions:[{...base.competitions[0],rows:[...base.competitions[0].rows,...base.competitions[0].rows]}]}).errors.some(e=>e.code==='DUPLICATE_COMMUNICATO'),true);
+assert.equal(audit({...base,general:[...base.general,row('mer 7/10','21:00','1','AAA','B','BBB')]}).errors.some(e=>e.code==='FIELD_COLLISION'),true);
+assert.equal(audit({general:base.general,competitions:[{id:'future',rows:[]}]}).ok,false);
+console.log('6 calendar audit tests passed');
