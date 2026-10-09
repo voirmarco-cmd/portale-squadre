@@ -11,7 +11,7 @@ export default async function handler(req,res){
  const now=new Date(),date=now.toISOString().slice(0,10);
  try{
    // Ogni evento e' un file distinto: niente sovrascritture o contatori persi in concorrenza.
-   await put("analytics/events/"+date+"/"+name.toLowerCase().replace(/[^a-z]+/g,"-")+".json",
+   await put("analytics/events/"+date+"/"+name.toLowerCase().replace(/[^a-z]+/g,"-")+"__"+(data.sport||"none").replace(/[^a-z0-9]/gi,"-")+"__"+(data.competition||"none").replace(/[^a-z0-9-]/gi,"-")+"__"+(data.view||"none").replace(/[^a-z0-9-]/gi,"-")+".json",
      JSON.stringify({at:now.toISOString(),event:name,data}),
      {access:"public",addRandomSuffix:true,contentType:"application/json",cacheControlMaxAge:0});
    return res.status(204).end();
