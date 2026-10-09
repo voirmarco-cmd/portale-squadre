@@ -13,7 +13,7 @@ export default async function handler(req,res){
    // Ogni evento e' un file distinto: niente sovrascritture o contatori persi in concorrenza.
    await put("analytics/events/"+date+"/"+name.toLowerCase().replace(/[^a-z]+/g,"-")+"__"+(data.sport||"none").replace(/[^a-z0-9]/gi,"-")+"__"+(data.competition||"none").replace(/[^a-z0-9-]/gi,"-")+"__"+(data.view||"none").replace(/[^a-z0-9-]/gi,"-")+".json",
      JSON.stringify({at:now.toISOString(),event:name,data}),
-     {access:"public",addRandomSuffix:true,contentType:"application/json",cacheControlMaxAge:0});
+     {access:"private",addRandomSuffix:true,contentType:"application/json"});
    return res.status(204).end();
  }catch(e){console.error("ANALYTICS_ARCHIVE_ERROR",e?.message||e);return res.status(503).json({error:"archive unavailable"})}
 }
