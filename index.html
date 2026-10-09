@@ -142,9 +142,21 @@ const PORTAL={
 };
 const $=id=>document.getElementById(id);
 function analyticsEvent(name,data={}){
-  if(!["Team Shared","Favorite Added","Favorite Removed"].includes(name))return;
-  fetch("/api/share-click",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({event:name,team:data.team||""}),keepalive:true}).catch(()=>{});
+  // Vercel Web Analytics: eventi per torneo, vista e azione, senza dati personali.
+  try{
+    const safe={};
+    for(const [key,value] of Object.entries(data)){
+      if(value!==undefined&&value!==null&&value!=="")safe[key]=String(value).slice(0,200);
+    }
+    if(typeof window.va==="function")window.va("event",{name,data:safe});
+  }catch(e){}
+  // Conserva il conteggio storico delle condivisioni e dei preferiti.
+  if(["Team Shared","Favorite Added","Favorite Removed"].includes(name))
+    fetch("/api/share-click",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({event:name,team:data.team||""}),keepalive:true}).catch(()=>{});
 }
+function analyticsCompetition(){return PORTAL.competitions.find(c=>c.id===selectedCompetitionId)}
+function analyticsContext(){const c=analyticsCompetition();return {sport:c?sportKey(c):"unknown",competition:c?c.id:"unknown"}}
+function analyticsView(view,extra={}){analyticsEvent("Portal View",{view,...analyticsContext(),...extra})}
 const canon=s=>(s||"").replaceAll("*","").trim();
 function compTeams(c){const set=new Set();Object.values(c.groups||{}).forEach(ts=>(ts||[]).forEach(t=>set.add(canon(t))));return set}
 PORTAL.competitions.forEach(c=>c._teams=compTeams(c));
@@ -209,10 +221,10 @@ function fixtureCountdown(dateText,competitionName){
   return {text:"Fra "+days+" giorni",cls:""};
 }
 let selectedTeam=null,selectedCompetitionId=null;
-function goHome(){closePortalModals();if($("generalPage"))$("generalPage").classList.remove("open");selectedTeam=null;selectedCompetitionId=null;$("search").value="";$("results").style.display="none";$("empty").style.display="none";$("dash").style.display="none";$("competitionContent").style.display="none";if($("publicCompetitions"))$("publicCompetitions").style.display="block";history.replaceState(null,"",location.pathname);renderPublicCompetitions();scrollTo({top:0,behavior:"smooth"});}
+function goHome(){analyticsView("home",{source:"navigation"});closePortalModals();if($("generalPage"))$("generalPage").classList.remove("open");selectedTeam=null;selectedCompetitionId=null;$("search").value="";$("results").style.display="none";$("empty").style.display="none";$("dash").style.display="none";$("competitionContent").style.display="none";if($("publicCompetitions"))$("publicCompetitions").style.display="block";history.replaceState(null,"",location.pathname);renderPublicCompetitions();scrollTo({top:0,behavior:"smooth"});}
 $("homeToggle").onclick=goHome;
 function selectTeam(t){
-  analyticsEvent("Team Selected",{team:t});
+  analyticsEvent("Team Selected",{team:t,competitions:teamCompetitions(t).map(c=>sportKey(c)).join(",")});
   selectedTeam=t;rememberTeam(t);updateTeamUrl(t);$("search").value=t;$("results").style.display="none";$("empty").style.display="none";if($("publicCompetitions"))$("publicCompetitions").style.display="none";$("dash").style.display="block";
   const cs=teamCompetitions(t);$("teamName").textContent=t;$("teamMeta").textContent=cs.length+" "+(cs.length===1?"competizione attiva":"competizioni attive");updateFavoriteButton(t);
   $("competitionTabs").innerHTML=cs.map((c,i)=>'<button class="competition-tab" data-id="'+esc(c.id)+'"><span class="ctitle">'+esc(c.name)+'</span><span class="cmeta">'+esc(c.sport)+' · '+esc(c.type)+'</span></button>').join("");
@@ -221,7 +233,7 @@ function selectTeam(t){
   setTimeout(()=>$("teamName").scrollIntoView({behavior:"smooth",block:"start"}),50);
 }
 function selectCompetition(id){
-  analyticsEvent("Competition Viewed",{competition:id,team:selectedTeam||""});
+  analyticsEvent("Competition Viewed",{competition:id,sport:sportKey(PORTAL.competitions.find(c=>c.id===id)||{}),source:"team"});analyticsView("team_competition",{competition:id,sport:sportKey(PORTAL.competitions.find(c=>c.id===id)||{})});
   selectedCompetitionId=id;const c=PORTAL.competitions.find(x=>x.id===id);const t=selectedTeam;if(!c||!t)return;
   [...$("competitionTabs").querySelectorAll(".competition-tab")].forEach(b=>b.classList.toggle("active",b.dataset.id===id));
   $("competitionContent").style.display="block";$("competitionSport").textContent=c.sport;$("competitionName").textContent=c.name;$("competitionType").textContent=c.type;
@@ -241,14 +253,14 @@ function activeCompetition(){return PORTAL.competitions.find(x=>x.id===selectedC
 let selectedSportFilter="all";
 function sportKey(c){const t=norm([c.sport,c.type,c.name].join(" "));if(/gabbione/.test(t))return "gabbione";if(/calcio a 7|calcio 7|\bc7\b/.test(t))return "c7";if(/calcio a 5|calcio 5|\bc5\b/.test(t))return "c5";return "other"}
 function visibleCompetitions(){return PORTAL.competitions.filter(c=>selectedSportFilter==="all"||sportKey(c)===selectedSportFilter)}
-function applySportFilter(key){selectedSportFilter=key;document.querySelectorAll(".sport-filter").forEach(b=>{const on=b.dataset.sport===key;b.classList.toggle("active",on);b.setAttribute("aria-pressed",String(on))});renderPublicCompetitions()}
+function applySportFilter(key){analyticsEvent("Sport Filter",{sport:key});selectedSportFilter=key;document.querySelectorAll(".sport-filter").forEach(b=>{const on=b.dataset.sport===key;b.classList.toggle("active",on);b.setAttribute("aria-pressed",String(on))});renderPublicCompetitions()}
 document.querySelectorAll(".sport-filter").forEach(b=>b.addEventListener("click",()=>applySportFilter(b.dataset.sport)));
 function renderPublicCompetitions(){
  const host=$("publicCompetitionList"); if(!host)return;
  host.innerHTML=visibleCompetitions().map(c=>'<article class="public-comp-card"><div class="eyebrow">'+esc(c.sport)+'</div><div class="public-comp-name">'+esc(c.name)+'</div><div class="public-comp-meta">'+c._teams.size+' squadre · '+esc(c.type)+'</div><div class="tournament-actions"><button class="tournament-action public-results" data-id="'+esc(c.id)+'">Risultati</button><button class="tournament-action public-scorers" data-id="'+esc(c.id)+'">Top marcatori</button><button class="tournament-action public-general" data-id="'+esc(c.id)+'">Classifiche</button></div></article>').join("");
- host.querySelectorAll(".public-results").forEach(b=>b.onclick=()=>{selectedCompetitionId=b.dataset.id;renderResults();openPortalModal("resultsModal")});
- host.querySelectorAll(".public-scorers").forEach(b=>b.onclick=()=>{selectedCompetitionId=b.dataset.id;renderTop();openPortalModal("scorersModal")});
- host.querySelectorAll(".public-general").forEach(b=>b.onclick=()=>{selectedCompetitionId=b.dataset.id;openRankings()});
+ host.querySelectorAll(".public-results").forEach(b=>b.onclick=()=>{selectedCompetitionId=b.dataset.id;analyticsView("results",{source:"home"});renderResults();openPortalModal("resultsModal")});
+ host.querySelectorAll(".public-scorers").forEach(b=>b.onclick=()=>{selectedCompetitionId=b.dataset.id;analyticsView("scorers",{source:"home"});renderTop();openPortalModal("scorersModal")});
+ host.querySelectorAll(".public-general").forEach(b=>b.onclick=()=>{selectedCompetitionId=b.dataset.id;openRankings("home")});
 }
 function parseFixtureDate(f,c){
   const m=String(f.date||"").match(/(\d{1,2})\/(\d{1,2})/);if(!m)return null;
@@ -306,13 +318,13 @@ function renderGroupRankings(){
  }).join("");
 }
 function showRankingsView(view){
- const groups=!!qualificationInfo(activeCompetition())||view!=="overall";
+ analyticsEvent("Standings Tab",{...analyticsContext(),tab:view});const groups=!!qualificationInfo(activeCompetition())||view!=="overall";
  $("groupsRankings").style.display=groups?"block":"none";$("generalRanking").style.display=groups?"none":"block";
  $("groupsTab").classList.toggle("active",groups);$("overallTab").classList.toggle("active",!groups);
  if(groups)renderGroupRankings();else renderGeneral();
 }
-function openRankings(){
- showRankingsView("groups");$("generalPage").classList.add("open");$("generalPage").setAttribute("aria-hidden","false");document.body.style.overflow="hidden";$("generalPage").scrollTop=0;
+function openRankings(source="team"){
+ analyticsView("standings",{source});showRankingsView("groups");$("generalPage").classList.add("open");$("generalPage").setAttribute("aria-hidden","false");document.body.style.overflow="hidden";$("generalPage").scrollTop=0;
 }
 function generalRows(c){
   const all=[];
@@ -328,8 +340,8 @@ function renderGeneral(){
   rows.forEach((x,i)=>{if(i<56&&i%8===0)h+='<div class="band-title">Fascia '+(Math.floor(i/8)+1)+' · posizioni '+(i+1)+'–'+(i+8)+'</div>';if(i===56)h+='<div class="band-title eliminated-band">Eliminata</div>';h+='<div class="general-row"><span class="rank">'+(i+1)+'</span><span class="gteam">'+esc(x.team)+'<span class="ggroup">Girone '+esc(x.group)+'</span></span><span class="num">'+x.pos+'ª</span><span class="num">'+x.pti+'</span><span class="num">'+(x.dr>0?"+":"")+x.dr+'</span><span class="num">'+x.rf+'</span></div>'});
   $("generalRanking").innerHTML=h;
 }
-$("resultsBtn").onclick=()=>{renderResults();openPortalModal("resultsModal")};
-$("topScorersBtn").onclick=()=>{renderTop();openPortalModal("scorersModal")};
+$("resultsBtn").onclick=()=>{analyticsView("results",{source:"team"});renderResults();openPortalModal("resultsModal")};
+$("topScorersBtn").onclick=()=>{analyticsView("scorers",{source:"team"});renderTop();openPortalModal("scorersModal")};
 document.querySelectorAll("[data-close-modal]").forEach(b=>b.onclick=closePortalModals);
 document.querySelectorAll(".portal-modal").forEach(m=>m.addEventListener("click",e=>{if(e.target===m)closePortalModals()}));
 $("generalBtn").onclick=openRankings;
@@ -343,8 +355,9 @@ if(standaloneMode){
   try{if(localStorage.getItem("portal-standalone-first-open")!=="1"){analyticsEvent("Standalone First Open");localStorage.setItem("portal-standalone-first-open","1")}}catch(e){}
 }
 let searchTracked=false;
-$("search").addEventListener("input",()=>{if(!searchTracked){searchTracked=true;analyticsEvent("Search Used")}});
+$("search").addEventListener("input",()=>{if(!searchTracked){searchTracked=true;analyticsEvent("Search Used",{source:"team_search"})}});
 renderPublicCompetitions();
+analyticsEvent("Portal Open",{view:"home",mode:standaloneMode?"installed":"browser"});
 const requestedTeam=resolveTeam(new URLSearchParams(location.search).get("squadra"));
 const preferredTeam=favoriteTeam();
 if(requestedTeam){selectTeam(requestedTeam)}else if(preferredTeam){selectTeam(preferredTeam)}
