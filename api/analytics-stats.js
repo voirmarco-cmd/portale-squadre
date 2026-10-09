@@ -13,11 +13,11 @@ export default async function handler(req,res){
    do{
      const page=await list({prefix:"analytics/events/",limit:1000,cursor});
      for(const blob of page.blobs){
-       if(singleDay ? blob.pathname.split("/")[2]!==requested : new Date(blob.uploadedAt).getTime()<cutoff)continue;
-       // Archivio eventi pubblico solo per conteggi aggregati, senza identificatori personali.
+       if(singleDay ? new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Rome",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date(blob.uploadedAt))!==requested : new Date(blob.uploadedAt).getTime()<cutoff)continue;
+       // Archivio privato; questo endpoint espone solo conteggi aggregati, senza identificatori personali.
        const file=blob.pathname.split("/").pop()||"";
        const parts=file.replace(/-[a-z0-9]{6,}\.json$/i,"").replace(/\.json$/i,"").split("__");
-       const date=blob.pathname.split("/")[2];
+       const date=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Rome",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date(blob.uploadedAt));
        const eventMap={"team-shared":"Team Shared","favorite-added":"Favorite Added","favorite-removed":"Favorite Removed"};
        const event=eventMap[parts[0]]||parts[0];
        const add=(o,k)=>{if(k&&k!=="none")o[k]=(o[k]||0)+1};
