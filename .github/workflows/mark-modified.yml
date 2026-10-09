@@ -1,0 +1,33 @@
+name: Segnala automaticamente partite modificate
+on:
+  push:
+    branches: [main]
+    paths:
+      - index.html
+permissions:
+  contents: write
+concurrency:
+  group: modificato-main
+  cancel-in-progress: false
+jobs:
+  mark-modified:
+    if: "!contains(github.event.head_commit.message, '[auto-modificato]')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: true
+      - name: Confronta con l'ultima versione pubblicata
+        run: |
+          git show HEAD^:index.html > /tmp/ncc-previous-index.html
+          node scripts/mark-modified.mjs /tmp/ncc-previous-index.html index.html
+      - name: Pubblica i timestamp delle partite spostate
+        run: |
+          if ! git diff --quiet -- index.html; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add index.html
+            git commit -m "Aggiorna automaticamente MODIFICATO [auto-modificato]"
+            git push
+          fi
