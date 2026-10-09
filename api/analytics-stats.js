@@ -11,11 +11,13 @@ export default async function handler(req,res){
      for(const blob of page.blobs){
        if(new Date(blob.uploadedAt).getTime()<cutoff)continue;
        // Archivio eventi pubblico solo per conteggi aggregati, senza identificatori personali.
-       const resp=await fetch(blob.url,{cache:"no-store"});
-       if(!resp.ok)continue;
-       const e=await resp.json(),d=e.data||{},date=String(e.at||"").slice(0,10);
-       const add=(o,k)=>{if(k)o[k]=(o[k]||0)+1};
-       add(byEvent,e.event);add(bySport,d.sport);add(byCompetition,d.competition);add(byView,d.view);add(byDate,date);
+       const file=blob.pathname.split("/").pop()||"";
+       const parts=file.replace(/-[a-z0-9]{6,}\\.json$/i,"").replace(/\\.json$/i,"").split("__");
+       const date=blob.pathname.split("/")[2];
+       const eventMap={"team-shared":"Team Shared","favorite-added":"Favorite Added","favorite-removed":"Favorite Removed"};
+       const event=eventMap[parts[0]]||parts[0];
+       const add=(o,k)=>{if(k&&k!=="none")o[k]=(o[k]||0)+1};
+       add(byEvent,event);add(bySport,parts[1]);add(byCompetition,parts[2]);add(byView,parts[3]);add(byDate,date);
        scanned++;
      }
      cursor=page.hasMore?page.cursor:undefined;
