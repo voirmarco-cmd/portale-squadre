@@ -86,3 +86,8 @@ Una marcatura elementare deve poter essere rappresentata almeno con:
 `associationStatus` deve distinguere almeno i casi `matched`, `unmatched` e `ambiguous`.
 
 In fase di **PUBBLICA PORTALE SQUADRE**, oltre allo snapshot pubblico, va quindi preservato/aggiornato l'archivio storico interno secondo queste regole. L'eventuale esposizione delle statistiche nel sito sarà una funzione separata da implementare solo quando richiesta.
+
+
+## Etichetta MODIFICATO automatica
+
+A ogni commit che aggiorna `index.html`, il workflow GitHub Actions `.github/workflows/mark-modified.yml` confronta le gare del nuovo calendario con la versione precedente. Per una gara **già programmata** (stessa competizione, turno, girone e coppia di squadre), se cambia **giorno o orario**, registra automaticamente `modifiedAt` al momento della pubblicazione. Il portale mostra `MODIFICATO` per 48 ore. Le nuove gare non ricevono l'etichetta; i timestamp preesistenti restano invariati per gare non spostate. `RECUPERO` rimane indipendente e permanente. In caso di cambiamenti nella struttura delle competizioni, il workflow si arresta per evitare modifiche errate. Richiede GitHub Actions attivo e permesso di scrittura `contents: write`.
