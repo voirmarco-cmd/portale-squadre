@@ -142,15 +142,15 @@ const PORTAL={
 };
 const $=id=>document.getElementById(id);
 function analyticsEvent(name,data={}){
-  // Vercel Web Analytics: eventi per torneo, vista e azione, senza dati personali.
-  try{
-    const safe={};
-    for(const [key,value] of Object.entries(data)){
-      if(value!==undefined&&value!==null&&value!=="")safe[key]=String(value).slice(0,200);
-    }
-    if(typeof window.va==="function")window.va("event",{name,data:safe});
-  }catch(e){}
-  // Conserva il conteggio storico delle condivisioni e dei preferiti.
+  const safe={};
+  for(const [key,value] of Object.entries(data)){
+    if(value!==undefined&&value!==null&&value!=="")safe[key]=String(value).slice(0,120);
+  }
+  // Archivio NCC persistente: non dipende dai limiti di Web Analytics.
+  fetch("/api/analytics-event",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({event:name,data:safe}),keepalive:true}).catch(()=>{});
+  // Mantiene anche gli eventi nativi quando disponibili.
+  try{if(typeof window.va==="function")window.va("event",{name,data:safe})}catch(e){}
   if(["Team Shared","Favorite Added","Favorite Removed"].includes(name))
     fetch("/api/share-click",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({event:name,team:data.team||""}),keepalive:true}).catch(()=>{});
 }
