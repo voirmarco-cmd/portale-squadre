@@ -9,7 +9,7 @@ export default async function handler(req,res){
  const data={};for(const k of ["sport","competition","view","source","tab","mode","competitions","team"]){
    if(typeof raw[k]==="string")data[k]=raw[k].slice(0,120);
  }
- const now=new Date(),date=now.toISOString().slice(0,10);
+ const now=new Date(),date=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Rome",year:"numeric",month:"2-digit",day:"2-digit"}).format(now);
  const visitor=typeof req.body?.visitor==="string"&&/^[0-9a-f-]{36}$/i.test(req.body.visitor)?req.body.visitor:null;
  const secret=process.env.ANALYTICS_HASH_SECRET||process.env.BLOB_READ_WRITE_TOKEN;
  const dailyVisitor=visitor&&secret?createHmac("sha256",secret).update(date+":"+visitor).digest("hex").slice(0,24):null;
