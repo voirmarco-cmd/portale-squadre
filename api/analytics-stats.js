@@ -9,6 +9,7 @@ export default async function handler(req,res){
  const singleDay=req.query.days===undefined;
  const byEvent={},bySport={},byCompetition={},byDate={},byView={},byTeam={},favoriteAddedByTeam={},favoriteRemovedByTeam={},sharedByTeam={};
  let cursor,scanned=0;
+ const uniqueByDate={};
  try{
    do{
      const page=await list({prefix:"analytics/events/",limit:1000,cursor});
@@ -22,11 +23,17 @@ export default async function handler(req,res){
        const event=eventMap[parts[0]]||parts[0];
        const add=(o,k)=>{if(k&&k!=="none")o[k]=(o[k]||0)+1};
        add(byEvent,event);add(bySport,parts[1]);add(byCompetition,parts[2]);add(byView,parts[3]);add(byTeam,parts[4]);if(event==="Favorite Added")add(favoriteAddedByTeam,parts[4]);if(event==="Favorite Removed")add(favoriteRemovedByTeam,parts[4]);if(event==="Team Shared")add(sharedByTeam,parts[4]);add(byDate,date);
+       if(event==="portal-open"&&/^[a-f0-9]{24}$/.test(parts[5]||"")){
+         if(!uniqueByDate[date])uniqueByDate[date]=new Set();
+         uniqueByDate[date].add(parts[5]);
+       }
        scanned++;
      }
      cursor=page.hasMore?page.cursor:undefined;
    }while(cursor);
+   const uniqueVisitorsByDate=Object.fromEntries(Object.entries(uniqueByDate).map(([d,ids])=>[d,ids.size]));
+   const uniqueVisitors=singleDay?(uniqueVisitorsByDate[requested]||0):null;
    res.setHeader("Cache-Control","no-store");
-   return res.status(200).json({date:singleDay?requested:null,days:singleDay?1:days,events:scanned,byEvent,bySport,byCompetition,byView,byTeam,favoriteAddedByTeam,favoriteRemovedByTeam,sharedByTeam,byDate,note:"Conteggi di interazioni, non visitatori unici; archivio dal giorno di attivazione."});
+   return res.status(200).json({date:singleDay?requested:null,days:singleDay?1:days,events:scanned,uniqueVisitors,uniqueVisitorsByDate,byEvent,bySport,byCompetition,byView,byTeam,favoriteAddedByTeam,favoriteRemovedByTeam,sharedByTeam,byDate,note:"Visitatori unici stimati per browser/giorno, solo dal rilascio del nuovo tracciamento; nessun IP salvato."});
  }catch(e){console.error("ANALYTICS_REPORT_ERROR",e?.message||e);return res.status(503).json({error:"report unavailable"})}
 }
