@@ -91,3 +91,46 @@ In fase di **PUBBLICA PORTALE SQUADRE**, oltre allo snapshot pubblico, va quindi
 ## Etichetta MODIFICATO automatica
 
 A ogni commit che aggiorna `index.html`, il workflow GitHub Actions `.github/workflows/mark-modified.yml` confronta le gare del nuovo calendario con la versione precedente. Per una gara **già programmata** (stessa competizione, turno, girone e coppia di squadre), se cambia **giorno o orario**, registra automaticamente `modifiedAt` al momento della pubblicazione. Il portale mostra `MODIFICATO` per 48 ore. Le nuove gare non ricevono l'etichetta; i timestamp preesistenti restano invariati per gare non spostate. `RECUPERO` rimane indipendente e permanente. In caso di cambiamenti nella struttura delle competizioni, il workflow si arresta per evitare modifiche errate. Richiede GitHub Actions attivo e permesso di scrittura `contents: write`.
+
+
+## Continuità operativa tra chat (aggiornato 9 ottobre 2026)
+
+**Questo README è il punto di partenza per ogni nuova conversazione ChatGPT sul Portale NCC.** Prima di cambiare dati o pubblicare, leggere anche il codice corrente del repository e verificare lo stato Vercel: questo documento descrive convenzioni e architettura, non sostituisce il controllo dello stato reale. Non presumere che una modifica GitHub sia già in produzione senza controllare il deployment READY.
+
+### Riferimenti e fonti
+
+- Portale pubblico: https://portale-squadre.vercel.app
+- GitHub: `voirmarco-cmd/portale-squadre`; frontend e snapshot pubblico in `index.html`.
+- Vercel: progetto `prj_31NH20PF8sMGHcE2wbcaRLIbK7pZ`, team `team_ALwMKgHfn6yro7OYi3FHAsrU`.
+- Google Sheets PROGRAMMA GENERALE: `1TWJusS5IMNX3hROGlTZYY-rZs8TuwaEG3F_ZZ9TiIGw`, tab `PROGRAMMA GENERALE`.
+- Comunicato C5: `1FNQnDEj0NRenPEv8bL_-fNzSleGZbtNte6xHQX5s3_s`, tab `MARCATORI`.
+- Comunicato C7: `1pSaACm5lWIBm8F_M_UCXPdwy0F6Zs-5kEC-_8m6SyXw`, tab `COPPA BB C7`.
+- Comunicato Gabbione: `1GVN_jwGaBSNjyxd0X1d46zMGplcDuAaDNcskL7LNGuM`, tab `COPPA BB C5`.
+- Le fonti Google Sheets sono interne: non cambiare risultati, calendario o formule senza richiesta esplicita. Allineare Programma Generale e Comunicati quando si pubblicano aggiornamenti approvati.
+
+### Competenze e UX
+
+- Competizioni: C5, C7, Gabbione; il portale aggrega le competizioni attive nella vista squadra.
+- Home con discipline/competizioni, ricerca squadre, risultati settimanali, classifiche e marcatori; vista squadra con prossima partita, calendario, risultati e preferito.
+- Il preferito è conservato nel browser (localStorage `portal-favorite-team`); non esiste un registro server dei preferiti attivi.
+- Le partite rinviate hanno stato `RINV`; i recuperi hanno segnalazione distinta; `MODIFICATO` dura 48 ore per variazioni di data/ora secondo il workflow documentato sopra.
+- Non modificare la UX per introdurre analytics; non alterare mai involontariamente settimane già pubblicate, in particolare 5 e 12 ottobre 2026. Controllare anche ordine cronologico, grassetti, recuperi e formule.
+- Pubblicare insieme tutte le competizioni attive quando l'utente ordina di pubblicare; non trattare ogni foglio come un portale indipendente.
+
+### Analytics: architettura effettiva (9 ottobre 2026)
+
+- Il frontend invia eventi con `analyticsEvent(...)` tramite POST `/api/analytics-event`; il server salva ogni evento come Blob **privato** in `analytics/events/` usando `@vercel/blob ^2.3.0`. Il vecchio `/api/share-click` registra solo nei log e **non è uno storico persistente**.
+- `/api/analytics-stats` aggrega gli eventi per giornata italiana (`Europe/Rome`); `?days=90` aggrega una finestra mobile. Restituisce `events`, `byEvent`, `bySport`, `byCompetition`, `byView`, `byTeam`, `byDate`, `favoriteAddedByTeam`, `favoriteRemovedByTeam`, `sharedByTeam`, `favoriteTimeline`, `uniqueVisitors`, `uniqueVisitorsByDate`.
+- **Significato dei dati:** `events` sono interazioni, non visitatori; `portal-open` sono aperture, non persone; `byTeam` include eventi diversi e NON indica i soli preferiti. Per preferiti usare esclusivamente `favoriteAddedByTeam`, `favoriteRemovedByTeam` e `favoriteTimeline`; le aggiunte meno rimozioni sono azioni nette, NON numero certificato di browser con quel preferito attivo.
+- Nuovo conteggio visitatori unici stimati: `index.html` genera UUID casuale nel localStorage (`ncc-analytics-visitor`) e lo trasmette negli eventi. L'API genera un HMAC-SHA256 giornaliero usando segreto server (`ANALYTICS_HASH_SECRET` se configurato, altrimenti `BLOB_READ_WRITE_TOKEN`), senza archiviare UUID grezzo né IP. Il report deduplica i codici degli eventi `Portal Open` per data italiana. Si tratta di **browser distinti stimati**, non individui; conteggio disponibile solo dal rilascio del tracciamento, non retroattivo. Prima di considerare il sistema conforme, valutare informativa, base giuridica, conservazione ed eventuale consenso per identificatore persistente.
+- La cronologia dei preferiti usa il timestamp `uploadedAt` dei Blob convertito in ora italiana. Verificare in produzione ogni nuova modifica, non dare per certo un deploy appena committato.
+- Limiti: l'archivio persistente è stato reso funzionante soltanto il 9 ottobre 2026, quindi lo storico precedente è incompleto; non inventare eventi o visite mancanti. L'endpoint di riepilogo aggrega Blob con paginazione e non è progettato per analytics ad alto volume; monitorarne prestazioni e accessi. Il conteggio di visitatori unici su periodi multi-giorno non equivale a individui deduplicati nell'intero periodo.
+- **Comando ChatGPT `Analytics`**: recuperare dati **reali del giorno corrente in ora italiana**, poi presentare in italiano un report leggibile con aperture, visitatori unici stimati, eventi, competizioni, navigazione, aggiunte/rimozioni preferiti **per squadra**, condivisioni e cronologia quando richiesta. Niente JSON grezzo, niente stime spacciate per misure. Per storico specificare sempre la copertura temporale e le lacune. Se un endpoint non risponde, dichiararlo.
+
+### Verifica e pubblicazione
+
+1. Leggere README e file pertinenti prima di intervenire; controllare SHA corrente e non sovrascrivere modifiche parallele.
+2. Applicare patch minime; preservare snapshot e calendario se si interviene solo su Analytics.
+3. Dopo commit controllare deployment Vercel **READY** sulla revisione giusta e interrogare l'endpoint pubblico per confermare che i nuovi campi compaiano.
+4. Distinguere verifiche statiche, dati reali osservati e test end-to-end non ancora effettuati; non dichiarare tutto collaudato senza prove.
+5. Aggiornare questo README quando cambiano architettura, operatività, tracciamento o convenzioni, affinché una nuova chat possa riprendere senza ricostruire il progetto.
