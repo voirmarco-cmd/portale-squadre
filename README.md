@@ -127,6 +127,10 @@ A ogni commit che aggiorna `index.html`, il workflow GitHub Actions `.github/wor
 - Limiti: l'archivio persistente è stato reso funzionante soltanto il 9 ottobre 2026, quindi lo storico precedente è incompleto; non inventare eventi o visite mancanti. L'endpoint di riepilogo aggrega Blob con paginazione e non è progettato per analytics ad alto volume; monitorarne prestazioni e accessi. Il conteggio di visitatori unici su periodi multi-giorno non equivale a individui deduplicati nell'intero periodo.
 - **Comando ChatGPT `Analytics`**: recuperare dati **reali del giorno corrente in ora italiana**, poi presentare in italiano un report leggibile con aperture, visitatori unici stimati, eventi, competizioni, navigazione, aggiunte/rimozioni preferiti **per squadra**, condivisioni e cronologia quando richiesta. Niente JSON grezzo, niente stime spacciate per misure. Per storico specificare sempre la copertura temporale e le lacune. Se un endpoint non risponde, dichiararlo.
 
+### Analytics semplificate (10 ottobre 2026)
+
+Per evitare di esaurire le 2.000 Advanced Requests gratuite di Vercel Blob, il portale usa nuovamente **Vercel Web Analytics** tramite `/_vercel/insights/script.js` e gli eventi `window.va`. La funzione frontend `analyticsEvent` NON invia più POST a `/api/analytics-event`; l'endpoint legacy restituisce 204 senza scrivere su Blob, anche per PWA in cache. L'archivio Blob precedente rimane conservato ma non deve essere interrogato abitualmente: `/api/analytics-stats` legge l'archivio e può consumare ulteriori richieste Blob. Per richieste future di «Analytics» consultare preferibilmente le statistiche native Vercel, distinguendo pageviews, visitatori ed eventi. Non riattivare la scrittura Blob senza richiesta esplicita e valutazione dei limiti.
+
 ### Verifica e pubblicazione
 
 1. Leggere README e file pertinenti prima di intervenire; controllare SHA corrente e non sovrascrivere modifiche parallele.
