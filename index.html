@@ -301,33 +301,6 @@ function qualificationRank(c,g,pos){
  return (g===(delta>0?"A":"B"))?"gold":"silver";
 }
 function qualificationClass(c,g,pos){const rank=qualificationRank(c,g,pos);return rank?"qualification-"+rank:"";}
-function sortGroupStandings(c,group,rows){
- const list=[...(rows||[])];
- if(c.id!=="coppa-bartoli-bassano-c5-2026"||group!=="F")return list.sort((a,b)=>(b.pti-a.pti)||(b.dr-a.dr)||(b.rf-a.rf)||String(a.team).localeCompare(String(b.team),"it"));
- const tied=new Map();
- for(const team of list){const k=Number(team.pti)||0;if(!tied.has(k))tied.set(k,[]);tied.get(k).push(team)}
- const avulsa=new Map();
- for(const peers of tied.values()){
-  if(peers.length<2)continue;
-  const names=new Set(peers.map(t=>canon(t.team)));
-  const stats=new Map([...names].map(n=>[n,{points:0,gf:0,ga:0}]));
-  for(const f of c.fixtures||[]){
-   const h=canon(f.home),a=canon(f.away);
-   if(f.group!==group||!names.has(h)||!names.has(a)||!/^(\d+)\s*-\s*(\d+)$/.test(String(f.result||"")))continue;
-   const [,hs,as]=String(f.result).match(/^(\d+)\s*-\s*(\d+)$/),hg=Number(hs),ag=Number(as);
-   const home=stats.get(h),away=stats.get(a);
-   home.gf+=hg;home.ga+=ag;away.gf+=ag;away.ga+=hg;
-   home.points+=hg>ag?3:hg===ag?1:0;away.points+=ag>hg?3:hg===ag?1:0;
-  }
-  for(const [n,st] of stats)avulsa.set(n,st);
- }
- return list.sort((a,b)=>{
-  if(a.pti!==b.pti)return b.pti-a.pti;
-  const x=avulsa.get(canon(a.team)),y=avulsa.get(canon(b.team));
-  if(x&&y)return (y.points-x.points)||((y.gf-y.ga)-(x.gf-x.ga))||(y.gf-x.gf)||(b.dr-a.dr)||String(a.team).localeCompare(String(b.team),"it");
-  return (b.dr-a.dr)||(b.rf-a.rf)||String(a.team).localeCompare(String(b.team),"it");
- });
-}
 function renderGroupRankings(){
  const c=activeCompetition();$("rankingsCompetition").textContent=c.name;
  const info=qualificationInfo(c),banner=$("qualificationBanner");
@@ -337,7 +310,7 @@ function renderGroupRankings(){
 
  const groups=Object.entries(c.standings||{}).sort((a,b)=>String(a[0]).localeCompare(String(b[0]),"it"));
  $("groupsRankings").innerHTML=groups.map(([g,rows])=>{
-  const sorted=sortGroupStandings(c,g,rows);
+  const sorted=[...(rows||[])].sort((a,b)=>(b.pti-a.pti)||(b.dr-a.dr)||(b.rf-a.rf)||String(a.team).localeCompare(String(b.team),"it"));
   return '<section class="group-ranking-card"><div class="group-ranking-title">Girone '+esc(g)+'</div><div class="group-tablewrap"><table class="group-table"><thead><tr><th>#</th><th>Squadra</th><th>G</th><th>V</th><th>P</th><th>S</th><th>GF</th><th>GS</th><th>DR</th><th>PTI</th></tr></thead><tbody>'+sorted.map((x,i)=>'<tr class="'+qualificationClass(c,g,i+1)+'"><td>'+(i+1)+'</td><td>'+esc(canon(x.team))+'</td><td>'+x.pg+'</td><td>'+x.v+'</td><td>'+x.n+'</td><td>'+x.p+'</td><td>'+x.rf+'</td><td>'+x.rs+'</td><td>'+(Number(x.dr)>0?"+":"")+x.dr+'</td><td><strong>'+x.pti+'</strong></td></tr>').join("")+'</tbody></table></div></section>';
  }).join("");
 }
@@ -353,7 +326,7 @@ function openRankings(source="team"){
 function generalRows(c){
   const all=[];
   Object.entries(c.standings||{}).forEach(([group,rows])=>{
-    const sorted=sortGroupStandings(c,group,rows);
+    const sorted=[...(rows||[])].sort((a,b)=>(b.pti-a.pti)||(b.dr-a.dr)||(b.rf-a.rf)||String(a.team).localeCompare(String(b.team),"it"));
     sorted.forEach((x,i)=>all.push({team:canon(x.team),group,pos:i+1,pti:Number(x.pti)||0,dr:Number(x.dr)||0,rf:Number(x.rf)||0}));
   });
   return all.sort((a,b)=>(a.pos-b.pos)||(b.pti-a.pti)||(b.dr-a.dr)||(b.rf-a.rf)||a.team.localeCompare(b.team,"it"));
