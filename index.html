@@ -339,7 +339,27 @@ function generalRows(c){
   const all=[];
   Object.entries(c.standings||{}).forEach(([group,rows])=>{
     const sorted=[...(rows||[])].sort((a,b)=>(b.pti-a.pti)||(b.dr-a.dr)||(b.rf-a.rf)||String(a.team).localeCompare(String(b.team),"it"));
-    sorted.forEach((x,i)=>all.push({team:canon(x.team),group,pos:i+1,pti:Number(x.pti)||0,dr:Number(x.dr)||0,rf:Number(x.rf)||0}));
+    sorted.forEach((x,i)=>{
+      let pti=Number(x.pti)||0,dr=Number(x.dr)||0,rf=Number(x.rf)||0;
+      // Solo classifica generale C5: nel girone N (5 squadre) le prime quattro
+      // sono confrontate su tre gare, escludendo il risultato contro la quinta.
+      // La classifica del girone e i dati delle partite non vengono alterati.
+      if(c.id==="coppa-bartoli-bassano-c5-2026"&&group==="N"&&i<4){
+        const fifth=sorted[4],key=teamKey(x.team),fifthKey=teamKey(fifth.team);
+        const direct=(c.fixtures||[]).find(f=>f.group==="N"&&
+          ((teamKey(f.home)===key&&teamKey(f.away)===fifthKey)||
+           (teamKey(f.away)===key&&teamKey(f.home)===fifthKey))&&/^\d+-\d+$/.test(String(f.result||"")));
+        if(direct){
+          const [homeGoals,awayGoals]=direct.result.split("-").map(Number);
+          const own=teamKey(direct.home)===key?homeGoals:awayGoals;
+          const conceded=teamKey(direct.home)===key?awayGoals:homeGoals;
+          pti-=own>conceded?3:own===conceded?1:0;
+          dr-=own-conceded;
+          rf-=own;
+        }
+      }
+      all.push({team:canon(x.team),group,pos:i+1,pti,dr,rf});
+    });
   });
   return all.sort((a,b)=>(a.pos-b.pos)||(b.pti-a.pti)||(b.dr-a.dr)||(b.rf-a.rf)||a.team.localeCompare(b.team,"it"));
 }
