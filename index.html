@@ -365,7 +365,7 @@ function generalRows(c){
 }
 function renderGeneral(){
   const c=activeCompetition(),rows=generalRows(c);
-  let h='<div class="general-row head"><span>#</span><span>Squadra</span><span>Pos.</span><span>PTI</span><span>DR</span><span>GF</span></div>';
+  let h=(c.id==='coppa-bartoli-bassano-c5-2026'?'<div class="note" style="margin:0 0 14px;padding:12px 14px;line-height:1.45"><strong>GIRONE N:</strong> Vengono esclusi i risultati con la quinta classificata per il posizionamento in classifica generale.</div>':'')+'<div class="general-row head"><span>#</span><span>Squadra</span><span>Pos.</span><span>PTI</span><span>DR</span><span>GF</span></div>';
   rows.forEach((x,i)=>{if(i<56&&i%8===0)h+='<div class="band-title">Fascia '+(Math.floor(i/8)+1)+' · posizioni '+(i+1)+'–'+(i+8)+'</div>';if(i===56)h+='<div class="band-title eliminated-band">Eliminata</div>';h+='<div class="general-row"><span class="rank">'+(i+1)+'</span><span class="gteam">'+esc(x.team)+'<span class="ggroup">Girone '+esc(x.group)+'</span></span><span class="num">'+x.pos+'ª</span><span class="num">'+x.pti+'</span><span class="num">'+(x.dr>0?"+":"")+x.dr+'</span><span class="num">'+x.rf+'</span></div>'});
   $("generalRanking").innerHTML=h;
 }
