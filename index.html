@@ -11,6 +11,7 @@
   window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
 </script>
 <script defer src="/_vercel/insights/script.js"></script>
+<script defer src="/posthog-init.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Source+Sans+3:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -148,6 +149,7 @@ function analyticsEvent(name,data={}){
   }
   // Solo Vercel Web Analytics: nessuna scrittura su Blob.
   try{if(typeof window.va==="function")window.va("event",{name,data:safe})}catch(e){}
+  try{if(typeof window.portalPosthogCapture==="function")window.portalPosthogCapture(name,safe)}catch(e){}
   if(["Team Shared","Favorite Added","Favorite Removed"].includes(name))
     fetch("/api/share-click",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({event:name,team:data.team||""}),keepalive:true}).catch(()=>{});
 }
