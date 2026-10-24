@@ -42,7 +42,7 @@
         if (!allowed.has(event.event)) return null;
         const props = event.properties || {};
         for (const key of ["$current_url", "$pathname", "$referrer", "$referring_domain",
-          "$initial_referrer", "$initial_referring_domain", "$host", "$session_id"]) {
+          "$initial_referrer", "$initial_referring_domain", "$session_id"]) {
           delete props[key];
         }
         return event;
