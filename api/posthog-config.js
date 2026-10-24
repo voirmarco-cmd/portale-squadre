@@ -1,6 +1,6 @@
 // Public, non-sensitive PostHog browser configuration.
 // If the project is not configured, the portal continues normally without analytics.
-module.exports = function handler(req, res) {
+export default function handler(req, res) {
   res.setHeader("Cache-Control", "public, max-age=300");
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.status(200).json({
