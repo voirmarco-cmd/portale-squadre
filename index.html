@@ -62,6 +62,18 @@ html[data-theme="dark"]{--bg:#151212;--card:#282324;--ink:#f5f0eb;--muted:#b9afa
 .team-standings-switch{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.team-standings-switch .rankings-tab{font-size:12px}.bracket-grid{width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scrollbar-width:thin}.bracket-round{scroll-snap-align:start}#teamBracketPanel{min-width:0;max-width:100%;overflow:hidden}#teamBracketPanel .bracket-grid{display:grid;grid-template-columns:repeat(3,200px);gap:14px}#teamBracketPanel .bracket-match{font-size:11px}
 
 .bracket-grid{align-items:start}.bracket-round{justify-content:flex-start;align-self:start}.bracket-round-title{min-height:20px}.bracket-semis .bracket-match,.bracket-final .bracket-match{margin:0}
+
+/* Allineamento ad albero: ogni semifinale è centrata fra i due quarti alimentanti; la finale fra le semifinali. */
+.bracket-grid{align-items:stretch}
+.bracket-grid .bracket-round{display:grid;grid-template-rows:24px repeat(4,minmax(104px,auto));gap:12px;align-self:stretch;align-content:start;justify-content:initial}
+.bracket-grid .bracket-round-title{grid-row:1;align-self:start}
+.bracket-grid .bracket-round:not(.bracket-semis):not(.bracket-final) .bracket-match:nth-child(2){grid-row:2}
+.bracket-grid .bracket-round:not(.bracket-semis):not(.bracket-final) .bracket-match:nth-child(3){grid-row:3}
+.bracket-grid .bracket-round:not(.bracket-semis):not(.bracket-final) .bracket-match:nth-child(4){grid-row:4}
+.bracket-grid .bracket-round:not(.bracket-semis):not(.bracket-final) .bracket-match:nth-child(5){grid-row:5}
+.bracket-grid .bracket-semis .bracket-match:nth-child(2){grid-row:2 / span 2;align-self:center}
+.bracket-grid .bracket-semis .bracket-match:nth-child(3){grid-row:4 / span 2;align-self:center}
+.bracket-grid .bracket-final .bracket-match:nth-child(2){grid-row:2 / span 4;align-self:center}
 </style></head><body>
 <div class="wrap"><aside class="ios-install" id="iosInstall" aria-label="Installa Portale NCC"><button class="ios-install-close" id="iosInstallClose" type="button" aria-label="Chiudi">×</button><strong>Installa Portale NCC sul tuo iPhone</strong><p>Accesso rapido a calendario, classifica e partite.</p><div class="ios-how"><span class="ios-share">⇧</span> Condividi &nbsp;→&nbsp; Aggiungi alla schermata Home</div></aside><section class="hero"><div class="hero-actions"><button class="home-toggle" id="homeToggle" type="button" aria-label="Torna alla home" title="Home"><svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path fill="currentColor" d="M3 10.6 12 3l9 7.6v9.1c0 .7-.6 1.3-1.3 1.3h-5.2v-6.2h-5V21H4.3C3.6 21 3 20.4 3 19.7v-9.1Z"/></svg></button><button class="theme-toggle" id="themeToggle" type="button" aria-label="Attiva modalità notte" title="Cambia tema">☾</button></div>
 <div class="brand"><img class="logo" src="/icons/icon-192.png" alt="A.S.D. Nuovo Centro Coteto"><div><div class="brandname">Nuovo Centro Coteto</div><div class="brandsub">Portale competizioni</div></div></div>
