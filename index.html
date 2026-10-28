@@ -368,7 +368,7 @@ function bracketHtml(model,team){
  const quarter=pairs.map((p,i)=>{
    const g=lookup(p[0].team,p[1].team);
    if(!g){winners.push(null);return '<div class="bracket-match">Accoppiamento da verificare</div>'}
-   const m=String(g.result||"").match(/^(\\d+)-(\\d+)(?:\\s+DCR)?$/i);
+   const m=String(g.result||"").match(/^(\d+)-(\d+)(?:\s+DCR)?$/i);
    const a=m?Number(m[1]):null,b=m?Number(m[2]):null;
    const winner=m&&a!==b?(a>b?g.home:g.away):null;
    winners.push(winner);
