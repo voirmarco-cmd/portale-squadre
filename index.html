@@ -357,10 +357,31 @@ function bracketModel(c){
    if(fi>=0&&ho>=0)[ranked[fi],ranked[ho]]=[ranked[ho],ranked[fi]];
    return Array.from({length:7},(_,i)=>({name:"Fascia "+(i+1),id:"Q"+(i+1),teams:ranked.slice(i*8,i*8+8),games:FINAL_QUARTERS.filter(f=>f.band==="Q"+(i+1)).map(g=>({...g,result:(c.fixtures||[]).find(f=>sameTeam(f.home,g.home)&&sameTeam(f.away,g.away)&&f.date===g.date)?.result||""}))}));
  }
- return [{name:"ORO",id:"ORO",games:[]},{name:"ARGENTO",id:"ARGENTO",games:[]}];
+ const fixtures=(c.fixtures||[]);
+ const plans=kind==="c7"?{
+  ORO:[["FC FANALE","FC PINOLINO"],["NFZ","JAGERBOMB"]],
+  ARGENTO:[["ATLETICO ARDENZA","FC JAMAICA"],["SANGRE NUEVA","TERMOIDRAULICA PERUGINO"]]
+ }:{
+  ORO:[["AMARANTO RACING","OLD BASTARD"],["JAMBOREE LIVORNO","BOCA MARE E SOLE"]],
+  ARGENTO:[["OSTRICONDA 2022","FC JAMAICA"],["OLD PETRARCA","CARROZZERIA LABRONICA"]]
+ };
+ return ["ORO","ARGENTO"].map(id=>({
+  name:id,id,
+  games:plans[id].map(([home,away])=>{
+   const f=fixtures.find(x=>(sameTeam(x.home,home)&&sameTeam(x.away,away))||(sameTeam(x.home,away)&&sameTeam(x.away,home)));
+   return f?{...f,home,away}:{home,away,result:"",date:"",time:"",field:""};
+  })
+ }));
 }
 function bracketHtml(model,team){
  if(!model.games.length)return '<p class="note">Accoppiamenti delle semifinali in attesa della definizione delle qualificate.</p>';
+ if(!model.teams){
+  const games=model.games;
+  const card=(g,i)=>'<div class="bracket-match"><div class="bracket-caption">SEMIFINALE '+(i+1)+(g.date?' · '+esc(g.date):'')+(g.time?' · '+esc(g.time):'')+(g.field?' · Campo '+esc(g.field):'')+'</div><div class="bracket-club '+(team&&sameTeam(team,g.home)?"bracket-me":"")+'">'+esc(g.home)+'</div><div class="bracket-club '+(team&&sameTeam(team,g.away)?"bracket-me":"")+'">'+esc(g.away)+'</div></div>';
+  const winner=g=>{const m=String(g.result||"").match(/^(\\d+)-(\\d+)$/);return m&&Number(m[1])!==Number(m[2])?(Number(m[1])>Number(m[2])?g.home:g.away):null};
+  const a=winner(games[0])||"Vincente semifinale 1",b=winner(games[1])||"Vincente semifinale 2";
+  return '<div class="bracket-grid"><div class="bracket-round bracket-semis"><div class="bracket-round-title">Semifinali</div>'+games.map(card).join("")+'</div><div class="bracket-round bracket-final"><div class="bracket-round-title">Finale</div><div class="bracket-match"><div class="bracket-caption">FINALE '+esc(model.name)+'</div><div class="bracket-club">'+esc(a)+'</div><div class="bracket-club">'+esc(b)+'</div></div></div></div>';
+ }
  const lookup=(a,b)=>model.games.find(g=>(sameTeam(g.home,a)&&sameTeam(g.away,b))||(sameTeam(g.away,a)&&sameTeam(g.home,b)));
  const t=model.teams;
  const pairs=[[t[0],t[7]],[t[3],t[4]],[t[1],t[6]],[t[2],t[5]]];
@@ -397,7 +418,7 @@ function showTeamStandings(which){
  $("teamBracketTab").classList.toggle("active",bracket);$("teamGroupTab").classList.toggle("active",!bracket);
 }
 function updateTeamBracket(c,t){
- const models=bracketModel(c),m=models.find(m=>m.teams&&m.teams.some(x=>sameTeam(x.team,t)));
+ const models=bracketModel(c),m=models.find(m=>(m.teams&&m.teams.some(x=>sameTeam(x.team,t)))||(!m.teams&&m.games.some(g=>sameTeam(g.home,t)||sameTeam(g.away,t))));
  const enabled=!!m;
  $("teamBracketTab").style.display=enabled?"":"none";
  if(enabled){$("teamBracket").innerHTML='<div class="bracket-caption">'+esc(m.name)+' · scorri verso destra per seguire il percorso →</div>'+bracketHtml(m,t);showTeamStandings("bracket")}
