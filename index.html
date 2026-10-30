@@ -267,7 +267,7 @@ function fixtureStageLabel(f){
  const phase=/^(S[1-7]|(?:C7|GAB)\/[OA])$/.test(g);
  if(phase){
   const band=/^S[1-7]$/.test(g)?"FASCIA "+g.slice(1):"FASCIA "+(g.endsWith("/O")?"ORO":"ARGENTO");
-  return (/\b9\/11\b/.test(date)?"FINALE":"SEMIFINALE")+" · "+band;
+  return (/\b9\/11\b/.test(date)||(/^S[1-7]$/.test(g)&&/\b5\/11\b/.test(date))?"FINALE":"SEMIFINALE")+" · "+band;
  }
  if(/^Q[1-7]$/.test(g))return "QUARTO DI FINALE · FASCIA "+g.slice(1);
  return "Girone "+g;
