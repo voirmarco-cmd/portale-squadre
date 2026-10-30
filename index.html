@@ -378,7 +378,7 @@ function bracketHtml(model,team){
  if(!model.teams){
   const games=model.games;
   const card=(g,i)=>'<div class="bracket-match"><div class="bracket-caption">SEMIFINALE '+(i+1)+(g.date?' · '+esc(g.date):'')+(g.time?' · '+esc(g.time):'')+(g.field?' · Campo '+esc(g.field):'')+'</div><div class="bracket-club '+(team&&sameTeam(team,g.home)?"bracket-me":"")+'">'+esc(g.home)+'</div><div class="bracket-club '+(team&&sameTeam(team,g.away)?"bracket-me":"")+'">'+esc(g.away)+'</div></div>';
-  const winner=g=>{const m=String(g.result||"").match(/^(\\d+)-(\\d+)$/);return m&&Number(m[1])!==Number(m[2])?(Number(m[1])>Number(m[2])?g.home:g.away):null};
+  const winner=g=>{const m=String(g.result||"").match(/^(\d+)-(\d+)$/);return m&&Number(m[1])!==Number(m[2])?(Number(m[1])>Number(m[2])?g.home:g.away):null};
   const a=winner(games[0])||"Vincente semifinale 1",b=winner(games[1])||"Vincente semifinale 2";
   return '<div class="bracket-grid"><div class="bracket-round bracket-semis"><div class="bracket-round-title">Semifinali</div>'+games.map(card).join("")+'</div><div class="bracket-round bracket-final"><div class="bracket-round-title">Finale</div><div class="bracket-match"><div class="bracket-caption">FINALE '+esc(model.name)+'</div><div class="bracket-club">'+esc(a)+'</div><div class="bracket-club">'+esc(b)+'</div></div></div></div>';
  }
