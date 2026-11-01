@@ -376,7 +376,7 @@ function bracketModel(c){
  if(kind==="c5"){
    const ranked=generalRows(c),fi=ranked.findIndex(x=>x.team==="FRATEII FC"),ho=ranked.findIndex(x=>x.team==="HOLD THE LINE");
    if(fi>=0&&ho>=0)[ranked[fi],ranked[ho]]=[ranked[ho],ranked[fi]];
-   return Array.from({length:7},(_,i)=>({name:"Fascia "+(i+1),id:"Q"+(i+1),teams:ranked.slice(i*8,i*8+8),final:(c.fixtures||[]).find(f=>f.group==="S"+(i+1)&&/\b5\/11\b/.test(f.date)),games:FINAL_QUARTERS.filter(f=>f.band==="Q"+(i+1)).map(g=>({...g,result:(c.fixtures||[]).find(f=>sameTeam(f.home,g.home)&&sameTeam(f.away,g.away)&&f.date===g.date)?.result||""}))}));
+   return Array.from({length:7},(_,i)=>({name:"Fascia "+(i+1),id:"Q"+(i+1),teams:ranked.slice(i*8,i*8+8),final:(c.fixtures||[]).find(f=>f.group==="S"+(i+1)&&/\b5\/11\b/.test(f.date)),semis:(c.fixtures||[]).filter(f=>f.group==="S"+(i+1)&&!/\b5\/11\b/.test(f.date)),games:FINAL_QUARTERS.filter(f=>f.band==="Q"+(i+1)).map(g=>({...g,result:(c.fixtures||[]).find(f=>sameTeam(f.home,g.home)&&sameTeam(f.away,g.away)&&f.date===g.date)?.result||""}))}));
  }
  const fixtures=(c.fixtures||[]);
  const plans=kind==="c7"?{
@@ -416,14 +416,15 @@ function bracketHtml(model,team){
    const a=m?Number(m[1]):null,b=m?Number(m[2]):null;
    const winner=m&&a!==b?(a>b?g.home:g.away):null;
    winners.push(winner);
-   const score=m?' · '+esc(g.result.replace("-", "–"))+((sameTeam(g.home,"JOKERS")&&sameTeam(g.away,"PHOENIX FC"))||(sameTeam(g.home,"L9 X TROTTA")&&sameTeam(g.away,"PLESSO"))?' (a tavolino)':''):'';
+
    const club=(name,goals)=>'<div class="bracket-club '+(team&&sameTeam(name,team)?"bracket-me ":"")+(winner&&sameTeam(name,winner)?"bracket-winner":"")+'">'+esc(name)+(m?' <strong class="bracket-score">'+goals+'</strong>':'')+'</div>';
-   return '<div class="bracket-match"><div class="bracket-caption">QUARTO '+(i+1)+' · '+esc(g.date)+' · '+esc(g.time)+' · Campo '+esc(g.field)+score+'</div>'+club(g.home,a)+club(g.away,b)+'</div>';
+   return '<div class="bracket-match"><div class="bracket-caption">QUARTO '+(i+1)+' · '+esc(g.date)+' · '+esc(g.time)+' · Campo '+esc(g.field)+'</div>'+club(g.home,a)+club(g.away,b)+'</div>';
  });
- const future=(label,a,b)=>'<div class="bracket-match"><div class="bracket-caption">'+label+'</div><div class="bracket-club">'+esc(a)+'</div><div class="bracket-club">'+esc(b)+'</div></div>';
+ const future=(label,a,b,fixture)=>{const meta=fixture?(fixture.date?' · '+esc(fixture.date):'')+(fixture.time?' · '+esc(fixture.time):'')+(fixture.field?' · Campo '+esc(fixture.field):''):'';return '<div class="bracket-match"><div class="bracket-caption">'+label+meta+'</div><div class="bracket-club">'+esc(a)+'</div><div class="bracket-club">'+esc(b)+'</div></div>'};
+ const semiFixture=i=>(model.semis||[]).find(f=>[pairs[2*i][0].team,pairs[2*i][1].team].some(t=>sameTeam(f.home,t)||sameTeam(f.away,t)));
  const name=(i)=>winners[i]||"Vincente quarto "+(i+1);
  const finalMeta=model.final?(model.final.date?" · "+esc(model.final.date):"")+(model.final.time?" · "+esc(model.final.time):"")+(model.final.field?" · Campo "+esc(model.final.field):""):"";
- return '<div class="bracket-grid"><div class="bracket-round"><div class="bracket-round-title">Quarti</div>'+quarter.join("")+'</div><div class="bracket-round bracket-semis"><div class="bracket-round-title">Semifinali</div>'+future("SEMIFINALE 1",name(0),name(1))+future("SEMIFINALE 2",name(2),name(3))+'</div><div class="bracket-round bracket-final"><div class="bracket-round-title">Finale</div>'+future("FINALE"+finalMeta,"Vincente semifinale 1","Vincente semifinale 2")+'</div></div>';
+ return '<div class="bracket-grid"><div class="bracket-round"><div class="bracket-round-title">Quarti</div>'+quarter.join("")+'</div><div class="bracket-round bracket-semis"><div class="bracket-round-title">Semifinali</div>'+future("SEMIFINALE 1",name(0),name(1),semiFixture(0))+future("SEMIFINALE 2",name(2),name(3),semiFixture(1))+'</div><div class="bracket-round bracket-final"><div class="bracket-round-title">Finale</div>'+future("FINALE"+finalMeta,"Vincente semifinale 1","Vincente semifinale 2")+'</div></div>';
 }
 function renderBracketPage(band){
  const c=activeCompetition(),models=bracketModel(c),active=models.find(x=>x.id===band)||models[0];
