@@ -398,34 +398,28 @@ function bracketModel(c){
 }
 function bracketHtml(model,team){
  if(!model.games.length)return '<p class="note">Accoppiamenti delle semifinali in attesa della definizione delle qualificate.</p>';
+ const scoreInfo=g=>{const m=String(g?.result||"").trim().match(/^(\d+)\s*-\s*(\d+)(?:\s*DCR)?$/i);return m?{a:Number(m[1]),b:Number(m[2]),dcr:/DCR/i.test(g.result||"")}:null};
+ const winner=g=>{const m=scoreInfo(g);return m&&m.a!==m.b?(m.a>m.b?g.home:g.away):null};
+ const gameMeta=g=>g?(g.date?' · '+esc(g.date):'')+(g.time?' · '+esc(g.time):'')+(g.field?' · Campo '+esc(g.field):''):'';
+ const gameCard=(label,g)=>{const m=scoreInfo(g),w=winner(g);const club=(name,goals)=>'<div class="bracket-club '+(team&&sameTeam(team,name)?"bracket-me ":"")+(w&&sameTeam(w,name)?"bracket-winner":"")+'">'+esc(name)+(m?' <strong class="bracket-score">'+goals+'</strong>':'')+'</div>';return '<div class="bracket-match"><div class="bracket-caption">'+label+gameMeta(g)+'</div>'+club(g.home,m?.a)+club(g.away,m?.b)+'</div>'};
+ const pendingCard=(label,a,b,g)=>'<div class="bracket-match"><div class="bracket-caption">'+label+gameMeta(g)+'</div><div class="bracket-club">'+esc(a)+'</div><div class="bracket-club">'+esc(b)+'</div></div>';
  if(!model.teams){
   const games=model.games;
-  const finalMeta=model.final?(model.final.date?" · "+esc(model.final.date):"")+(model.final.time?" · "+esc(model.final.time):"")+(model.final.field?" · Campo "+esc(model.final.field):""):"";
-  const card=(g,i)=>'<div class="bracket-match"><div class="bracket-caption">SEMIFINALE '+(i+1)+(g.date?' · '+esc(g.date):'')+(g.time?' · '+esc(g.time):'')+(g.field?' · Campo '+esc(g.field):'')+'</div><div class="bracket-club '+(team&&sameTeam(team,g.home)?"bracket-me":"")+'">'+esc(g.home)+'</div><div class="bracket-club '+(team&&sameTeam(team,g.away)?"bracket-me":"")+'">'+esc(g.away)+'</div></div>';
-  const winner=g=>{const m=String(g.result||"").match(/^(\d+)-(\d+)$/);return m&&Number(m[1])!==Number(m[2])?(Number(m[1])>Number(m[2])?g.home:g.away):null};
   const a=winner(games[0])||"Vincente semifinale 1",b=winner(games[1])||"Vincente semifinale 2";
-  return '<div class="bracket-grid"><div class="bracket-round bracket-semis"><div class="bracket-round-title">Semifinali</div>'+games.map(card).join("")+'</div><div class="bracket-round bracket-final"><div class="bracket-round-title">Finale</div><div class="bracket-match"><div class="bracket-caption">FINALE '+esc(model.name)+finalMeta+'</div><div class="bracket-club">'+esc(a)+'</div><div class="bracket-club">'+esc(b)+'</div></div></div></div>';
+  return '<div class="bracket-grid"><div class="bracket-round bracket-semis"><div class="bracket-round-title">Semifinali</div>'+games.map((g,i)=>gameCard("SEMIFINALE "+(i+1),g)).join("")+'</div><div class="bracket-round bracket-final"><div class="bracket-round-title">Finale</div>'+pendingCard("FINALE "+esc(model.name),a,b,model.final)+'</div></div>';
  }
  const lookup=(a,b)=>model.games.find(g=>(sameTeam(g.home,a)&&sameTeam(g.away,b))||(sameTeam(g.away,a)&&sameTeam(g.home,b)));
  const t=model.teams;
  const pairs=[[t[0],t[7]],[t[3],t[4]],[t[1],t[6]],[t[2],t[5]]];
- const winners=[];
- const quarter=pairs.map((p,i)=>{
-   const g=lookup(p[0].team,p[1].team);
-   if(!g){winners.push(null);return '<div class="bracket-match">Accoppiamento da verificare</div>'}
-   const m=String(g.result||"").match(/^(\d+)-(\d+)(?:\s+DCR)?$/i);
-   const a=m?Number(m[1]):null,b=m?Number(m[2]):null;
-   const winner=m&&a!==b?(a>b?g.home:g.away):null;
-   winners.push(winner);
-
-   const club=(name,goals)=>'<div class="bracket-club '+(team&&sameTeam(name,team)?"bracket-me ":"")+(winner&&sameTeam(name,winner)?"bracket-winner":"")+'">'+esc(name)+(m?' <strong class="bracket-score">'+goals+'</strong>':'')+'</div>';
-   return '<div class="bracket-match"><div class="bracket-caption">QUARTO '+(i+1)+' · '+esc(g.date)+' · '+esc(g.time)+' · Campo '+esc(g.field)+'</div>'+club(g.home,a)+club(g.away,b)+'</div>';
- });
- const future=(label,a,b,fixture)=>{const meta=fixture?(fixture.date?' · '+esc(fixture.date):'')+(fixture.time?' · '+esc(fixture.time):'')+(fixture.field?' · Campo '+esc(fixture.field):''):'';return '<div class="bracket-match"><div class="bracket-caption">'+label+meta+'</div><div class="bracket-club">'+esc(a)+'</div><div class="bracket-club">'+esc(b)+'</div></div>'};
- const semiFixture=i=>(model.semis||[]).find(f=>[pairs[2*i][0].team,pairs[2*i][1].team].some(t=>sameTeam(f.home,t)||sameTeam(f.away,t)));
- const name=(i)=>winners[i]||"Vincente quarto "+(i+1);
- const finalMeta=model.final?(model.final.date?" · "+esc(model.final.date):"")+(model.final.time?" · "+esc(model.final.time):"")+(model.final.field?" · Campo "+esc(model.final.field):""):"";
- return '<div class="bracket-grid"><div class="bracket-round"><div class="bracket-round-title">Quarti</div>'+quarter.join("")+'</div><div class="bracket-round bracket-semis"><div class="bracket-round-title">Semifinali</div>'+future("SEMIFINALE 1",name(0),name(1),semiFixture(0))+future("SEMIFINALE 2",name(2),name(3),semiFixture(1))+'</div><div class="bracket-round bracket-final"><div class="bracket-round-title">Finale</div>'+future("FINALE"+finalMeta,"Vincente semifinale 1","Vincente semifinale 2")+'</div></div>';
+ const quarters=pairs.map(p=>lookup(p[0].team,p[1].team));
+ const quarter=quarters.map((g,i)=>g?gameCard("QUARTO "+(i+1),g):'<div class="bracket-match">Accoppiamento da verificare</div>');
+ const qWinners=quarters.map(winner);
+ const semiMatch=(i)=>{const a=qWinners[i*2],b=qWinners[i*2+1];return (model.semis||[]).find(g=>a&&b&&((sameTeam(g.home,a)&&sameTeam(g.away,b))||(sameTeam(g.home,b)&&sameTeam(g.away,a))))||null};
+ const semis=[semiMatch(0),semiMatch(1)];
+ const semiLabel=i=>[qWinners[i*2]||"Vincente quarto "+(i*2+1),qWinners[i*2+1]||"Vincente quarto "+(i*2+2)];
+ const semifinals=semis.map((g,i)=>{const names=semiLabel(i);return g?gameCard("SEMIFINALE "+(i+1),g):pendingCard("SEMIFINALE "+(i+1),names[0],names[1],null)}).join("");
+ const finalNames=semis.map((g,i)=>winner(g)||"Vincente semifinale "+(i+1));
+ return '<div class="bracket-grid"><div class="bracket-round"><div class="bracket-round-title">Quarti</div>'+quarter.join("")+'</div><div class="bracket-round bracket-semis"><div class="bracket-round-title">Semifinali</div>'+semifinals+'</div><div class="bracket-round bracket-final"><div class="bracket-round-title">Finale</div>'+pendingCard("FINALE",finalNames[0],finalNames[1],model.final)+'</div></div>';
 }
 function renderBracketPage(band){
  const c=activeCompetition(),models=bracketModel(c),active=models.find(x=>x.id===band)||models[0];
