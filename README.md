@@ -24,6 +24,10 @@ Repository:
 
 https://github.com/voirmarco-cmd/portale-squadre
 
+## Timestamp dell'ultima pubblicazione ufficiale
+
+A ogni comando **PUBBLICA PORTALE SQUADRE** che aggiorna ufficialmente i dati pubblici (risultati, marcatori, calendari, classifiche, disciplinare), impostare nello snapshot il timestamp reale della pubblicazione, con **data, ora e minuto nel fuso Europe/Rome**. Il frontend deve mostrare sempre l'orario, nel formato `Aggiornato: 4 novembre 2026 · 21:45` (esempio di formato, non un valore da usare). Non lasciare `meta.publishedTime` vuoto nelle nuove pubblicazioni; verificare che il timestamp corrisponda al rilascio ufficiale effettivo. Per commit minori (grafica, configurazione PWA, correzioni tecniche) **non aggiornare** il timestamp: deve continuare a rappresentare l'ultima pubblicazione ufficiale dei dati, non l'ultimo deployment Vercel. Non inventare orari per snapshot storici che ne sono privi.
+
 ## Principio di pubblicazione
 
 Google Sheets è l'ambiente di lavoro interno. Il sito pubblico deve mostrare solo l'ultimo snapshot ufficialmente pubblicato, non le modifiche intermedie in corso sui fogli.
