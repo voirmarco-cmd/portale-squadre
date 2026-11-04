@@ -100,6 +100,14 @@ html[data-theme="dark"]{--bg:#151212;--card:#282324;--ink:#f5f0eb;--muted:#b9afa
 <div class="general-page" id="generalPage" aria-hidden="true"><div class="general-inner"><div class="general-head"><button class="general-back" id="generalBack" type="button">← Indietro</button><div class="general-title"><div class="eyebrow" id="rankingsCompetition"></div><h2>Classifiche</h2></div></div><div class="rankings-tabs" id="rankingsTabs"><button class="rankings-tab active" id="groupsTab" type="button">Classifiche gironi</button><button class="rankings-tab" id="overallTab" type="button">Classifica generale</button></div><div id="qualificationBanner" class="qualification-banner" style="display:none"></div><div id="groupsRankings"></div><div id="bracketPageContent" style="display:none"></div><div class="general-card" id="generalRanking" style="display:none"></div></div></div>
 <footer class="privacy-footer">A.S.D. Nuovo Centro Coteto · <a href="/privacy.html">Privacy</a></footer>
 <script>
+if ("serviceWorker" in navigator && window.isSecureContext) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js", { scope: "/", updateViaCache: "none" })
+      .catch(error => console.warn("Registrazione PWA non riuscita:", error));
+  });
+}
+</script>
+<script>
 (function(){
   const ua=navigator.userAgent||"";
   const isIOS=/iPad|iPhone|iPod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
