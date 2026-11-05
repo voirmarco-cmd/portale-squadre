@@ -151,3 +151,20 @@ A **ogni** comando `PUBBLICA PORTALE SQUADRE`, ricostruire da zero gli elenchi `
 ### Classifica Generale C5 — compensazione girone N (14 ottobre 2026)
 
 Il girone N è l'unico con **5 squadre**; gli altri gironi C5 ne hanno 4. **Soltanto quando tutte le partite della fase a gironi sono concluse**, calcolare la Classifica Generale C5 rendendo confrontabili le squadre su **3 incontri validi**. Determinare prima la quinta classificata del girone N dalla **classifica di girone reale e completa**, applicando i normali criteri di ordinamento/spareggio. Per ciascuna delle prime quattro del girone N, escludere **esclusivamente dalla Classifica Generale** il risultato dello scontro diretto contro la quinta: sottrarre una partita giocata, il relativo esito (V/N/P), i punti conseguiti, reti fatte e subite e differenza reti; ricalcolare gli indicatori derivati e gli eventuali criteri di ordinamento. Per gli altri gironi A–M usare le statistiche complete. **Non alterare** classifica ufficiale del girone N, risultati, marcatori, calendario o dati storici. La quinta classificata del girone N non va confusa con le prime quattro e non deve essere conteggiata nella graduatoria delle squadre confrontate su tre gare senza una regola specifica. Non applicare prematuramente questa compensazione mentre i gironi sono ancora in corso.
+
+
+## Procedura Programma Generale — calendario C5 2026/27
+
+Quando si inseriscono le giornate dei campionati nel Google Sheet **PROGRAMMA GENERALE**, usare i calendari ufficiali dei rispettivi comunicati come fonte e collocare ogni giornata nella settimana corretta (blocchi settimanali di 117 righe; prime settimane del campionato dal 9, 16, 23 e 30 novembre 2026). Non modificare la griglia operativa esistente a sinistra né le giornate delle altre categorie.
+
+**Formato obbligatorio per ogni partita, replicando la riga modello CLUB AMERICA – RED DEVILS (riga 589):**
+
+- Squadra di casa: testo nella cella X della riga, **unire X:AC**, font **Lexend 16 pt**, centrato orizzontalmente, allineato in basso.
+- Separatore: lettera **A** nella cella AD, font **Lexend 12 pt**, centrata orizzontalmente, allineata in basso; AD non va unita.
+- Squadra ospite: testo nella cella AE, **unire AE:AJ**, font **Lexend 16 pt**, centrato orizzontalmente, allineato in basso.
+- Intestazione categoria/giornata: in AE, per esempio `PROMOZIONE · 1ª GIORNATA`, font **Lexend 16 pt grassetto**, centrata orizzontalmente e allineata in basso.
+- Lasciare due righe vuote tra l'ultima partita di una categoria e l'intestazione successiva, come nelle sezioni già presenti.
+- **Non basta copiare testo e font: le celle delle squadre vanno realmente unite su ogni riga**, altrimenti i nomi risultano troncati.
+- Verificare dopo ogni aggiornamento il numero di gare, i nomi, le settimane e la geometria delle celle; preservare le altre categorie e la griglia principale.
+
+Per le prime quattro giornate 2026/27, nel blocco di ogni settimana con riga iniziale `w` (586, 703, 820, 937), le nuove sezioni sono: **Promozione** intestazione `w+38`, sette partite `w+39…w+45`; **Eccellenza** intestazione `w+48`, sei partite `w+49…w+54`. La Promozione ha 14 squadre (inclusa ZUTALORS FC); l'Eccellenza ne ha 13 (con una squadra che riposa a turno). I riposi non sono partite e non vanno inseriti come incontri.
