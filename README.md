@@ -153,6 +153,9 @@ A **ogni** comando `PUBBLICA PORTALE SQUADRE`, ricostruire da zero gli elenchi `
 Il girone N è l'unico con **5 squadre**; gli altri gironi C5 ne hanno 4. **Soltanto quando tutte le partite della fase a gironi sono concluse**, calcolare la Classifica Generale C5 rendendo confrontabili le squadre su **3 incontri validi**. Determinare prima la quinta classificata del girone N dalla **classifica di girone reale e completa**, applicando i normali criteri di ordinamento/spareggio. Per ciascuna delle prime quattro del girone N, escludere **esclusivamente dalla Classifica Generale** il risultato dello scontro diretto contro la quinta: sottrarre una partita giocata, il relativo esito (V/N/P), i punti conseguiti, reti fatte e subite e differenza reti; ricalcolare gli indicatori derivati e gli eventuali criteri di ordinamento. Per gli altri gironi A–M usare le statistiche complete. **Non alterare** classifica ufficiale del girone N, risultati, marcatori, calendario o dati storici. La quinta classificata del girone N non va confusa con le prime quattro e non deve essere conteggiata nella graduatoria delle squadre confrontate su tre gare senza una regola specifica. Non applicare prematuramente questa compensazione mentre i gironi sono ancora in corso.
 
 
+
+**Trasferimento al comunicato ufficiale:** dopo la compilazione del Programma Generale, ordinare le gare **di ciascuna giornata in ordine cronologico crescente** (lunedì 20:00, lunedì 21:00, lunedì 22:00, martedì 20:00, ecc.; a parità di orario, campo crescente). Nei comunicati l'orario deve essere visualizzato **HH:mm con i due punti** (`20:00`, non `20.00`), mantenendo per quanto possibile il valore numerico con formato TIME `hh:mm`. Non cambiare risultati, giornate successive o formule. La denominazione della squadra di Serie A C5 è **JAMBOREE C5**, distinta da **JAMBOREE LIVORNO** del gabbione; non unificare le due squadre sul portale.
+
 ## Procedura Programma Generale — calendario C5 2026/27
 
 Quando si inseriscono le giornate dei campionati nel Google Sheet **PROGRAMMA GENERALE**, usare i calendari ufficiali dei rispettivi comunicati come fonte e collocare ogni giornata nella settimana corretta (blocchi settimanali di 117 righe; prime settimane del campionato dal 9, 16, 23 e 30 novembre 2026). Non modificare la griglia operativa esistente a sinistra né le giornate delle altre categorie.
@@ -160,7 +163,7 @@ Quando si inseriscono le giornate dei campionati nel Google Sheet **PROGRAMMA GE
 **Formato obbligatorio per ogni partita, replicando la riga modello CLUB AMERICA – RED DEVILS (riga 589):**
 
 - Squadra di casa: testo nella cella X della riga, **unire X:AC**, font **Lexend 16 pt**, centrato orizzontalmente, allineato in basso.
-- Separatore: lettera **A** nella cella AD, font **Lexend 12 pt**, centrata orizzontalmente, allineata in basso; AD non va unita.
+- Separatore: sigla della categoria (**A, B, C, D, ECC, PRO**) nella cella AD, font **Lexend 12 pt**, centrata orizzontalmente, allineata in basso; AD non va unita.
 - Squadra ospite: testo nella cella AE, **unire AE:AJ**, font **Lexend 16 pt**, centrato orizzontalmente, allineato in basso.
 - Intestazione categoria/giornata: in AE, per esempio `PROMOZIONE · 1ª GIORNATA`, font **Lexend 16 pt grassetto**, centrata orizzontalmente e allineata in basso.
 - Lasciare due righe vuote tra l'ultima partita di una categoria e l'intestazione successiva, come nelle sezioni già presenti.
