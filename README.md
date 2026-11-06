@@ -28,6 +28,20 @@ https://github.com/voirmarco-cmd/portale-squadre
 
 A ogni comando **PUBBLICA PORTALE SQUADRE** che aggiorna ufficialmente i dati pubblici (risultati, marcatori, calendari, classifiche, disciplinare), impostare nello snapshot il timestamp reale della pubblicazione, con **data, ora e minuto nel fuso Europe/Rome**. Il frontend deve mostrare sempre l'orario, nel formato `Aggiornato: 4 novembre 2026 · 21:45` (esempio di formato, non un valore da usare). Non lasciare `meta.publishedTime` vuoto nelle nuove pubblicazioni; verificare che il timestamp corrisponda al rilascio ufficiale effettivo. Per commit minori (grafica, configurazione PWA, correzioni tecniche) **non aggiornare** il timestamp: deve continuare a rappresentare l'ultima pubblicazione ufficiale dei dati, non l'ultimo deployment Vercel. Non inventare orari per snapshot storici che ne sono privi.
 
+## Regola marcatori, per tutte le coppe e i campionati (6 novembre 2026)
+
+**A ogni PUBBLICA PORTALE SQUADRE** leggere sempre le marcature individuali e i risultati delle fonti Google Sheets correnti di ciascuna competizione, non soltanto i risultati. Il controllo GitHub Actions `check-match-scorers.yml` esamina inoltre tutti gli snapshot pubblicati, inclusi quelli dei campionati, dopo ogni modifica al portale e ogni giorno. Questo audit **non importa autonomamente i dati Google**: la lettura autorizzata delle fonti resta parte del workflow di pubblicazione.
+
+Procedura obbligatoria di generazione dello snapshot:
+1. Leggere il calendario delle gare e le righe dei marcatori elementari con squadra, data e reti (non dedurre i marcatori dalla sola classifica cannonieri cumulativa).
+2. Normalizzare gli alias delle squadre (es. UTD / UNITED), il formato data e l'identità della competizione; associare una riga marcatore alla partita solo se competizione + data + squadra individuano una **unica** partita. Se non è univoca, lasciare in attesa e segnalare.
+3. Scrivere `fixture.matchScorers = {home:[{name,goals}],away:[{name,goals}]}` quando le liste sono effettivamente disponibili. Per una squadra con 0 gol usare `[]`; quando il dettaglio manca o non è verificato usare `null` per il lato relativo. Mai usare un elenco vuoto come sostituto di dati non ancora inseriti.
+4. Verificare la somma dei gol per ogni lato. Se supera il risultato, fermare la pubblicazione e segnalare l'errore. Se è inferiore, **non inventare autogol**: mantenere le marcature note e indicare la parte mancante come in verifica, a meno che l'autogol sia documentato esplicitamente.
+5. Pubblicare i risultati anche quando i fogli non riportano ancora i marcatori, ma mostrare l'assenza nel pop-up del risultato. Alle pubblicazioni successive recuperare automaticamente i nuovi marcatori anche per gare precedenti; non cancellare dettagli già verificati soltanto perché la nuova fonte risulta temporaneamente vuota.
+6. Dopo ogni pubblicazione controllare il report automatico per **tutte** le competizioni, con priorità per nuovi risultati con marcatori mancanti. Una segnalazione di mancata compilazione non è motivo per inventare dati; una contraddizione dei dati è un errore.
+
+**Limite attuale:** il controllo GitHub Actions implementa la verifica degli snapshot, non un sincronizzatore non presidiato Google Sheets → GitHub → Vercel. Quest'ultimo richiederebbe credenziali sicure di lettura per i Google Sheets e un workflow esplicitamente autorizzato per il rilascio dei dati ufficiali. Non presentare il controllo come una sincronizzazione completata.
+
 ## Principio di pubblicazione
 
 Google Sheets è l'ambiente di lavoro interno. Il sito pubblico deve mostrare solo l'ultimo snapshot ufficialmente pubblicato, non le modifiche intermedie in corso sui fogli.
