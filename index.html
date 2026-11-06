@@ -98,6 +98,30 @@ html[data-theme="dark"]{--bg:#151212;--card:#282324;--ink:#f5f0eb;--muted:#b9afa
 .group-table tr[class*="league-pos-"]>td:first-child,.standings tr[class*="league-pos-"]>td:first-child{box-shadow:inset 5px 0 var(--league-zone)}
 .group-table tr[class*="league-pos-"]>td,.standings tr[class*="league-pos-"]>td{background:color-mix(in srgb,var(--league-zone) 20%,var(--card))}
 html[data-theme="dark"] .group-table tr[class*="league-pos-"]>td,html[data-theme="dark"] .standings tr[class*="league-pos-"]>td{background:color-mix(in srgb,var(--league-zone) 15%,var(--card))}
+
+/* Home compatta: pannelli espandibili. */
+.public-comp-card.compact-competition{padding:0;overflow:hidden;border-radius:15px;margin-bottom:8px}
+.compact-competition .competition-disclosure{display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;padding:13px 15px;color:var(--ink);background:transparent;border:0;cursor:pointer;text-align:left}
+.compact-competition .competition-disclosure:hover{background:var(--soft)}
+.compact-competition .competition-summary{min-width:0;display:block;flex:1}
+.compact-competition .public-comp-name{display:block;font-size:22px;margin:2px 0 4px}
+.compact-competition .public-comp-meta{display:block;font-size:11px;margin:0}
+.compact-competition .competition-chevron{width:34px;height:34px;flex:0 0 34px;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;color:var(--a);background:var(--soft)}
+.compact-competition .competition-chevron svg{height:18px;width:18px;transition:transform .2s}
+.compact-competition.is-open .competition-chevron svg{transform:rotate(180deg)}
+.compact-competition .competition-collapsible{padding:0 14px 14px}
+.compact-competition .competition-collapsible[hidden]{display:none}
+.compact-competition .competition-collapsible .tournament-actions{grid-template-columns:repeat(2,minmax(0,1fr));margin:0}
+.compact-competition .competition-collapsible .tournament-action{min-height:40px}
+.league-round{margin:0 0 18px}.league-round:last-child{margin-bottom:0}
+.league-round-title{padding:9px 11px;margin:0 0 3px;border:1px solid var(--line);border-radius:10px;background:var(--soft);color:var(--a);font-family:"Barlow Condensed",sans-serif;font-size:19px;font-weight:900}
+.league-match{display:grid;grid-template-columns:92px minmax(0,1fr) auto;gap:11px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--line)}
+.league-match:last-child{border-bottom:0}
+.league-kickoff{display:flex;flex-direction:column;gap:2px;font-size:11px;font-weight:800;color:var(--muted);line-height:1.15}
+.league-kickoff strong{font-family:"Barlow Condensed",sans-serif;font-size:20px;color:var(--ink)}
+.league-match .week-teams{font-size:14px;line-height:1.3}
+.league-match .week-score{font-size:14px;color:var(--muted)}
+@media(max-width:440px){.league-match{grid-template-columns:79px minmax(0,1fr) auto;gap:8px}.league-match .week-teams{font-size:13px}.compact-competition .public-comp-name{font-size:20px}}
 </style></head><body>
 <div class="wrap"><aside class="ios-install" id="iosInstall" aria-label="Installa Portale NCC"><button class="ios-install-close" id="iosInstallClose" type="button" aria-label="Chiudi">×</button><strong>Installa Portale NCC sul tuo iPhone</strong><p>Accesso rapido a calendario, classifica e partite.</p><div class="ios-how"><span class="ios-share">⇧</span> Condividi &nbsp;→&nbsp; Aggiungi alla schermata Home</div></aside><section class="hero"><div class="hero-actions"><button class="home-toggle" id="homeToggle" type="button" aria-label="Torna alla home" title="Home"><svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path fill="currentColor" d="M3 10.6 12 3l9 7.6v9.1c0 .7-.6 1.3-1.3 1.3h-5.2v-6.2h-5V21H4.3C3.6 21 3 20.4 3 19.7v-9.1Z"/></svg></button><button class="theme-toggle" id="themeToggle" type="button" aria-label="Attiva modalità notte" title="Cambia tema">☾</button></div>
 <div class="brand"><img class="logo" src="/icons/icon-192.png" alt="A.S.D. Nuovo Centro Coteto"><div><div class="brandname">Nuovo Centro Coteto</div><div class="brandsub">Portale competizioni</div></div></div>
@@ -370,11 +394,13 @@ function applySportFilter(key){analyticsEvent("Sport Filter",{sport:key});select
 document.querySelectorAll(".sport-filter").forEach(b=>b.addEventListener("click",()=>applySportFilter(b.dataset.sport)));
 function renderPublicCompetitions(){
  const host=$("publicCompetitionList"),archiveHost=$("archivedCompetitionList"),archiveSection=$("archivedCompetitions");if(!host)return;
+ const opened=new Set([...document.querySelectorAll(".compact-competition.is-open")].map(el=>el.dataset.id));
  const cs=visibleCompetitions(),active=cs.filter(c=>!c.archived),archived=cs.filter(c=>c.archived);
- const card=c=>'<article class="public-comp-card'+(c.archived?" archived-card":"")+'"><div class="eyebrow">'+esc(c.sport)+(c.archived?" · Archivio":"")+'</div><div class="public-comp-name">'+esc(c.name)+'</div><div class="public-comp-meta">'+c._teams.size+' squadre · '+esc(c.type)+(c.archived?" · Conclusa":"")+'</div><div class="tournament-actions"><button class="tournament-action public-results" data-id="'+esc(c.id)+'">'+(c.type==="Campionato"?"Calendario":"Risultati")+'</button>'+(c.type==="Campionato"&&!(c.scorers||[]).length?"":'<button class="tournament-action public-scorers" data-id="'+esc(c.id)+'">Top marcatori</button>')+'<button class="tournament-action public-general" data-id="'+esc(c.id)+'">Classifiche</button>'+(c.type!=="Campionato"&&sportKey(c)!=="other"?'<button class="tournament-action public-bracket" data-id="'+esc(c.id)+'">Tabellone</button>':"")+'</div></article>';
- host.innerHTML=active.map(card).join("");
- archiveSection.style.display=archived.length?"":"none";archiveHost.innerHTML=archived.map(card).join("");
+ const actions=c=>'<div class="tournament-actions"><button class="tournament-action public-results" data-id="'+esc(c.id)+'">'+(c.type==="Campionato"?"Calendario":"Risultati")+'</button>'+(c.type==="Campionato"&&!(c.scorers||[]).length?"":'<button class="tournament-action public-scorers" data-id="'+esc(c.id)+'">Top marcatori</button>')+'<button class="tournament-action public-general" data-id="'+esc(c.id)+'">Classifiche</button>'+(c.type!=="Campionato"&&sportKey(c)!=="other"?'<button class="tournament-action public-bracket" data-id="'+esc(c.id)+'">Tabellone</button>':"")+'</div>';
+ const card=c=>{const open=opened.has(c.id);return '<article class="public-comp-card compact-competition'+(c.archived?" archived-card":"")+(open?" is-open":"")+'" data-id="'+esc(c.id)+'"><button type="button" class="competition-disclosure" data-id="'+esc(c.id)+'" aria-expanded="'+open+'" aria-controls="actions-'+esc(c.id)+'"><span class="competition-summary"><span class="eyebrow">'+esc(c.sport)+(c.archived?" · Archivio":"")+'</span><span class="public-comp-name">'+esc(c.name)+'</span><span class="public-comp-meta">'+c._teams.size+' squadre · '+esc(c.type)+(c.archived?" · Conclusa":"")+'</span></span><span class="competition-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></button><div class="competition-collapsible" id="actions-'+esc(c.id)+'"'+(open?"":" hidden")+'>'+actions(c)+'</div></article>';};
+ host.innerHTML=active.map(card).join("");archiveSection.style.display=archived.length?"":"none";archiveHost.innerHTML=archived.map(card).join("");
  for(const root of [host,archiveHost]){
+  root.querySelectorAll(".competition-disclosure").forEach(b=>b.onclick=()=>{const card=b.closest(".compact-competition"),panel=card.querySelector(".competition-collapsible"),wasOpen=b.getAttribute("aria-expanded")==="true";b.setAttribute("aria-expanded",String(!wasOpen));card.classList.toggle("is-open",!wasOpen);panel.hidden=wasOpen;});
   root.querySelectorAll(".public-results").forEach(b=>b.onclick=()=>{selectedCompetitionId=b.dataset.id;analyticsView("results",{source:"home"});renderResults();openPortalModal("resultsModal")});
   root.querySelectorAll(".public-scorers").forEach(b=>b.onclick=()=>{selectedCompetitionId=b.dataset.id;analyticsView("scorers",{source:"home"});renderTop();openPortalModal("scorersModal")});
   root.querySelectorAll(".public-general").forEach(b=>b.onclick=()=>{selectedCompetitionId=b.dataset.id;openRankings("home")});
@@ -395,10 +421,14 @@ function currentWeekResults(c){
   }).sort((a,b)=>parseFixtureDate(a,c)-parseFixtureDate(b,c)||String(a.time||"").localeCompare(String(b.time||"")));
 }
 function renderResults(){
-  const c=activeCompetition(),rows=c.type==="Campionato"?(c.fixtures||[]):currentWeekResults(c);
-  $("resultsModalTitle").textContent=c.type==="Campionato"?"Calendario · "+c.category:"Risultati";
-  if(c.type==="Campionato"){$("weekResults").innerHTML=rows.map(x=>'<div class="week-result"><div class="week-day">'+esc(x.round+"ª · "+x.date+" · "+x.time+" · Campo "+x.field)+'</div><div class="week-teams">'+esc(x.home)+'<br>'+esc(x.away)+'</div><div class="week-score">'+esc(x.result||"VS")+'</div></div>').join("");return;}
-  $("weekResults").innerHTML=rows.length?rows.map(x=>'<div class="week-result"><div class="week-day">'+esc(x.date)+'</div><div class="week-teams">'+esc(x.home)+'<br>'+esc(x.away)+'</div><div class="week-score'+(String(x.result).toUpperCase()==="RINV"?' postponed':'')+'">'+esc(String(x.result).toUpperCase()==="RINV"?"RINV":String(x.result).replace("-", "–"))+'</div></div>').join(""):'<div class="empty2">Nessun risultato ancora pubblicato questa settimana.</div>';
+ const c=activeCompetition(),rows=c.type==="Campionato"?(c.fixtures||[]):currentWeekResults(c);
+ $("resultsModalTitle").textContent=c.type==="Campionato"?"Calendario · "+c.category:"Risultati";
+ if(c.type==="Campionato"){
+  const groups=new Map();rows.forEach(f=>{const round=Number(f.round)||1;if(!groups.has(round))groups.set(round,[]);groups.get(round).push(f)});
+  $("weekResults").innerHTML=[...groups].sort((a,b)=>a[0]-b[0]).map(([round,matches])=>'<section class="league-round"><h4 class="league-round-title">'+round+'ª GIORNATA</h4>'+matches.map(f=>'<div class="league-match"><div class="league-kickoff"><span>'+esc(String(f.date||"").toUpperCase())+'</span><strong>'+esc(f.time)+'</strong></div><div class="week-teams">'+esc(f.home)+'<br>'+esc(f.away)+'</div><div class="week-score">'+esc(f.result||"VS")+'</div></div>').join("")+'</section>').join("");
+  return;
+ }
+ $("weekResults").innerHTML=rows.length?rows.map(x=>'<div class="week-result"><div class="week-day">'+esc(x.date)+'</div><div class="week-teams">'+esc(x.home)+'<br>'+esc(x.away)+'</div><div class="week-score'+(String(x.result).toUpperCase()==="RINV"?' postponed':'')+'">'+esc(String(x.result).toUpperCase()==="RINV"?"RINV":String(x.result).replace("-", "–"))+'</div></div>').join(""):'<div class="empty2">Nessun risultato ancora pubblicato questa settimana.</div>';
 }
 function renderTop(){
   const c=activeCompetition(),rows=[...(c.scorers||[])].filter(x=>Number(x.goals)>0).sort((a,b)=>Number(b.goals)-Number(a.goals)||String(a.name).localeCompare(String(b.name),"it")).slice(0,10);
