@@ -179,3 +179,11 @@ Sono sei competizioni **Campionato** autonome aggiunte a `PORTAL.competitions` i
 Ogni campionato espone la propria scheda sulla home, l'intero calendario programmato, una classifica iniziale a zero e la vista per squadra; **non inventare risultati, marcatori, qualificazioni o tabelloni**. Le coppe restano separate e inalterate. Nel frontend nascondere il tabellone per `type: "Campionato"` e indicare **Classifica** anziché **Girone**. Per la squadra PLESSO FC, la normalizzazione interna può accorpare il preesistente alias PLESSO, senza duplicare il profilo. JAMBOREE C5 (Serie A) resta distinto da JAMBOREE LIVORNO (Gabbione).
 
 **Pubblicazioni successive:** leggere le fonti Google Sheets live e aggiornare soltanto la competizione corretta, senza sovrascrivere i risultati storici delle coppe. Aggiornare `CHAMPIONSHIP_SNAPSHOT` quando vengono approvate nuove giornate o risultati; rigenerare le classifiche dai risultati validati. Gli incontri di calcio a 5 devono rispettare le preferenze e le incompatibilità ("mai con") prima della pubblicazione. Il portale non deve mai consultare i fogli in diretta.
+
+### Archivio competizioni e fasce classifiche (6 novembre 2026)
+
+- La Coppa Bartoli-Bassano C5 2026 è conclusa: la relativa competizione in PORTAL ha archived: true. Home e schede squadra separano competizioni attive e archiviate; con una sola competizione attiva non appare il selettore. L'archivio rimane consultabile.
+- I tabelloni mostrano i punteggi delle finali disputate attraverso gameCard anziché pendingCard, preservando semifinali e gare precedenti.
+- I titoli dei campionati sono SERIE A · 2026/27, ecc., senza il prefisso Calcio a 5 già implicito nel filtro.
+- Le fasce colorate delle classifiche seguono LEAGUE_ZONE_RULES, derivate dalle soglie delle sei categorie nei comunicati. Colori attribuiti alla posizione, non alla squadra. Prima del primo risultato le posizioni sono puramente indicative.
+- Le modifiche di interfaccia non alterano meta.publishedAt / meta.publishedTime, che rimangono il timestamp dell'ultima pubblicazione ufficiale dei dati.
