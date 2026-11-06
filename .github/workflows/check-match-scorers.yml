@@ -1,0 +1,23 @@
+name: Controllo marcatori pubblicati
+on:
+  push:
+    branches: [main]
+    paths:
+      - index.html
+      - scripts/check-match-scorers.mjs
+      - .github/workflows/check-match-scorers.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  scorers-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verifica che i nuovi risultati includano i marcatori
+        run: node scripts/check-match-scorers.mjs
