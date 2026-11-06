@@ -1,59 +1,50 @@
 #!/usr/bin/env node
-// Validate match-level scorers on newly published results.
-// Historical gaps remain reported separately; this gate prevents NEW omissions.
+// Automatic scorer audit for all published cups and league championships.
+// Results are independently publishable; missing scorer details must remain pending,
+// while forged, impossible or mismatched scorer data is rejected.
 import fs from 'node:fs';
-import { execFileSync } from 'node:child_process';
 
-function readSnapshots(html) {
-  const legacy = html.match(/window\.SNAPSHOT=(\{.*?\});<\/script>/s);
-  const championships = html.match(/const CHAMPIONSHIP_SNAPSHOT=(\{.*?\});\s*PORTAL\.competitions/s);
-  if (!legacy) throw Error('Snapshot COPPA non trovato in index.html');
-  const objects = [JSON.parse(legacy[1])];
-  if (championships) objects.push(...JSON.parse(championships[1]).competitions);
-  return objects.flatMap((s) => (s.fixtures || []).map((f) => ({
-    ...f, competition: s.meta?.competition || s.name || 'Campionato'
-  })));
+function parseFixtures(html) {
+  const cup = html.match(/window\.SNAPSHOT=(\{.*?\});<\/script>/s);
+  const leagues = html.match(/const CHAMPIONSHIP_SNAPSHOT=(\{.*?\});\s*PORTAL\.competitions/s);
+  if (!cup || !leagues) throw new Error('Snapshot coppe/campionati non identificabile: controllo interrotto');
+  const competitions = [JSON.parse(cup[1]), ...JSON.parse(leagues[1]).competitions];
+  return competitions.flatMap(c => (c.fixtures || []).map(f => ({...f, competition:c.meta?.competition || c.name || 'competizione'})));
 }
-const normalize = value => String(value || '').trim().toUpperCase()
-  .replace(/\bUTD\b/g, 'UNITED').replace(/\s+/g, ' ');
-const key = f => [f.competition, f.date, f.time, normalize(f.home), normalize(f.away)].join('|');
-function valid(f) {
-  const match = /^\s*(\d+)\s*[-:]\s*(\d+)/.exec(String(f.result || ''));
-  if (!match) return true;
-  const goals = [Number(match[1]), Number(match[2])];
-  if (!f.matchScorers || typeof f.matchScorers !== 'object') return false;
-  return ['home','away'].every((side, i) => {
-    const entry = f.matchScorers[side];
-    if (goals[i] === 0) return entry === null || (Array.isArray(entry) && entry.length === 0);
-    return Array.isArray(entry) && entry.length > 0 &&
-      entry.every(x => typeof x.name === 'string' && x.name.trim() && Number.isInteger(Number(x.goals)) && Number(x.goals) > 0) &&
-      entry.reduce((sum,x) => sum + Number(x.goals), 0) <= goals[i];
-  });
-}
-const current = readSnapshots(fs.readFileSync('index.html', 'utf8'));
-let previous = [];
-try {
-  previous = readSnapshots(execFileSync('git', ['show', 'HEAD^:index.html'], {encoding:'utf8', maxBuffer: 12 * 1024 * 1024}));
-} catch {
-  // First commit/shallow checkout: report pre-existing gaps but don't reject them.
-}
-const old = new Map(previous.map(f => [key(f), f]));
-const failures = [];
-for (const match of current) {
-  if (!match.result || valid(match)) continue;
-  const before = old.get(key(match));
-  if (!before || !before.result || valid(before)) {
-    failures.push(match);
+const fixtures = parseFixtures(fs.readFileSync('index.html','utf8'));
+const missing = [], invalid = [], complete = [];
+for (const f of fixtures) {
+  if (!f.result || /RINV|POST|ANN/i.test(f.result)) continue;
+  const m = /^\s*(\d+)\s*[-:]\s*(\d+)\s*(?:DCR)?\s*$/i.exec(String(f.result));
+  if (!m) { invalid.push({f,reason:'risultato non interpretabile'}); continue; }
+  const score = {home:Number(m[1]),away:Number(m[2])};
+  const label = [f.competition,f.date,f.home,f.result,f.away].join(' | ');
+  if (!f.matchScorers || f.matchScorers.home === null || f.matchScorers.away === null) {
+    missing.push(label);
+    continue;
   }
-}
-if (failures.length) {
-  for (const f of failures) {
-    console.error('::error::Marcatori mancanti/non validi: ' +
-      [f.competition, f.date, f.home, f.result, f.away].join(' / '));
+  let waiting = false;
+  for (const side of ['home','away']) {
+    const items = f.matchScorers[side];
+    if (!Array.isArray(items)) {
+      waiting = true;
+      continue;
+    }
+    if (items.some(x => !x || typeof x.name !== 'string' || !x.name.trim() ||
+      !Number.isInteger(Number(x.goals)) || Number(x.goals) <= 0)) {
+      invalid.push({f,reason:side+' contiene un marcatore non valido'});
+      continue;
+    }
+    const assigned = items.reduce((sum,x)=>sum + Number(x.goals),0);
+    if (assigned > score[side]) invalid.push({f,reason:side+' ha '+assigned+' reti attribuite su '+score[side]});
+    // A deficit might be an own goal, but cannot be assumed to be one.
+    else if (assigned < score[side]) waiting = true;
   }
-  console.error('Pubblicazione incompleta: ' + failures.length + ' incontri. Associare matchScorers verificati prima di pubblicare.');
-  process.exitCode = 1;
-} else {
-  const historical = current.filter(f => f.result && !valid(f));
-  console.log('Nessuna nuova omissione di marcatori. Lacune storiche ancora presenti: ' + historical.length);
+  if (waiting) missing.push(label);
+  else complete.push(label);
 }
+const uniqueMissing = [...new Set(missing)];
+for (const l of uniqueMissing) console.log('::warning::Marcatori incompleti / da verificare: '+l);
+for (const x of invalid) console.error('::error::'+[x.f.competition,x.f.date,x.f.home,x.f.away,x.reason].join(' | '));
+console.log('Riepilogo controllo automatico: '+complete.length+' partite complete, '+uniqueMissing.length+' con marcatori in attesa, '+invalid.length+' incongruenze.');
+if (invalid.length) process.exitCode=1;
