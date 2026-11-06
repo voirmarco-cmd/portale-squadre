@@ -6,6 +6,8 @@ on:
       - index.html
       - scripts/check-match-scorers.mjs
       - .github/workflows/check-match-scorers.yml
+  schedule:
+    - cron: '23 6 * * *'
   workflow_dispatch:
 permissions:
   contents: read
@@ -14,10 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Verifica che i nuovi risultati includano i marcatori
+      - name: Controlla marcatori di coppe e campionati
         run: node scripts/check-match-scorers.mjs
