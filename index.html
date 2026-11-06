@@ -279,6 +279,7 @@ function selectTeam(t){
   setTimeout(()=>$("teamName").scrollIntoView({behavior:"smooth",block:"start"}),50);
 }
 function fixtureStageLabel(f){
+ if(f.group==="CLASSIFICA")return f.round+"ª GIORNATA";
  const g=String(f.group||"").trim(),date=String(f.date||"");
  const phase=/^(S[1-7]|(?:C7|GAB)\/[OA])$/.test(g);
  if(phase){
@@ -304,7 +305,14 @@ function selectCompetition(id){
   selectedCompetitionId=id;const c=PORTAL.competitions.find(x=>x.id===id);const t=selectedTeam;if(!c||!t)return;
   [...$("competitionTabs").querySelectorAll(".competition-tab")].forEach(b=>b.classList.toggle("active",b.dataset.id===id));
   $("competitionContent").style.display="block";$("competitionSport").textContent=c.sport;$("competitionName").textContent=c.name;$("competitionType").textContent=c.type;
-  const g=teamGroup(c,t);$("g2").textContent=g;renderDisciplinary(t);updateTeamBracket(c,t);
+  const g=teamGroup(c,t),isLeague=c.type==="Campionato";$("g2").textContent=isLeague?"":g;
+  $("teamStandingsCard").querySelector(".eyebrow").textContent=isLeague?"Classifica campionato":"Classifica e tabellone";
+  $("teamGroupPanel").querySelector("h3").textContent=isLeague?"Classifica":"Girone "+g;
+  $("teamGroupTab").textContent=isLeague?"Classifica":"Classifica girone";
+  $("bracketBtn").style.display=isLeague?"none":"";
+  $("resultsBtn").textContent=isLeague?"Calendario":"Risultati";
+  $("topScorersBtn").style.display=isLeague&&!(c.scorers||[]).length?"none":"";
+  renderDisciplinary(t);updateTeamBracket(c,t);
   const fs=(c.fixtures||[]).filter(f=>sameTeam(f.home,t)||sameTeam(f.away,t)),possibleFinal=possibleFinalForTeam(c,t);if(possibleFinal)fs.push(possibleFinal);const n=fs.find(f=>!f.result&&!f.possibleFinal);
   if(n){const nextCountdown=fixtureCountdown(n.date,c.name),homeTeam=canon(n.home),opp=homeTeam===t?n.away:n.home;$("next").innerHTML='<div class="next-head"><div class="match-kickoff">'+esc(n.date)+' <span class="time">· '+esc(n.time)+'</span></div>'+(n.recovery?'<span class="recovery-tag">RECUPERO</span>':'')+(nextCountdown?'<div class="next-countdown '+nextCountdown.cls+'">'+nextCountdown.text+'</div>':'')+'</div><div class="match"><div class="club">'+esc(n.home)+(true?opponentSanctionBadge(n.home):'')+'</div><div class="vs">VS</div><div class="club away">'+esc(n.away)+(true?opponentSanctionBadge(n.away):'')+'</div></div><div class="match-place"><span class="place-item">'+(n.field!=="—"?"Campo "+esc(n.field):"Campo da definire")+'</span><span class="place-item">'+esc(fixtureStageLabel(n))+'</span></div>';document.querySelectorAll("#next .opponent-sanction-btn").forEach(b=>b.onclick=e=>{e.stopPropagation();const p=b.nextElementSibling,open=p.classList.toggle("open");b.setAttribute("aria-expanded",open?"true":"false")});}else if(c.id==="coppa-bartoli-bassano-c5-2026" && (c.fixtures||[]).some(f=>f.date==="lun 26/10"&&!f.result)) $("next").innerHTML='<div class="next-head"><div class="match-kickoff">QUARTI DI FINALE</div></div><div class="match-place"><span class="place-item">Mercoledì 28 o giovedì 29 ottobre</span></div><div class="note" style="margin-top:12px">Giorno esatto, orario, campo e avversario saranno comunicati lunedì 26 ottobre, al termine dei recuperi.</div>';else $("next").innerHTML='<div class="note">Nessuna gara futura pubblicata.</div>';
   const rows=[...((c.standings||{})[g]||[])].sort((a,b)=>(b.pti-a.pti)||(b.dr-a.dr)||(b.rf-a.rf)||a.team.localeCompare(b.team,"it"));
@@ -324,7 +332,7 @@ function applySportFilter(key){analyticsEvent("Sport Filter",{sport:key});select
 document.querySelectorAll(".sport-filter").forEach(b=>b.addEventListener("click",()=>applySportFilter(b.dataset.sport)));
 function renderPublicCompetitions(){
  const host=$("publicCompetitionList"); if(!host)return;
- host.innerHTML=visibleCompetitions().map(c=>'<article class="public-comp-card"><div class="eyebrow">'+esc(c.sport)+'</div><div class="public-comp-name">'+esc(c.name)+'</div><div class="public-comp-meta">'+c._teams.size+' squadre · '+esc(c.type)+'</div><div class="tournament-actions"><button class="tournament-action public-results" data-id="'+esc(c.id)+'">Risultati</button><button class="tournament-action public-scorers" data-id="'+esc(c.id)+'">Top marcatori</button><button class="tournament-action public-general" data-id="'+esc(c.id)+'">Classifiche</button>'+(sportKey(c)!=="other"?'<button class="tournament-action public-bracket" data-id="'+esc(c.id)+'">Tabellone</button>':'')+'</div></article>').join("");
+ host.innerHTML=visibleCompetitions().map(c=>'<article class="public-comp-card"><div class="eyebrow">'+esc(c.sport)+'</div><div class="public-comp-name">'+esc(c.name)+'</div><div class="public-comp-meta">'+c._teams.size+' squadre · '+esc(c.type)+'</div><div class="tournament-actions"><button class="tournament-action public-results" data-id="'+esc(c.id)+'">'+(c.type==="Campionato"?"Calendario":"Risultati")+'</button>'+(c.type==="Campionato"&&!(c.scorers||[]).length?"":'<button class="tournament-action public-scorers" data-id="'+esc(c.id)+'">Top marcatori</button>')+'<button class="tournament-action public-general" data-id="'+esc(c.id)+'">Classifiche</button>'+(c.type!=="Campionato"&&sportKey(c)!=="other"?'<button class="tournament-action public-bracket" data-id="'+esc(c.id)+'">Tabellone</button>':'')+'</div></article>').join("");
  host.querySelectorAll(".public-results").forEach(b=>b.onclick=()=>{selectedCompetitionId=b.dataset.id;analyticsView("results",{source:"home"});renderResults();openPortalModal("resultsModal")});
  host.querySelectorAll(".public-scorers").forEach(b=>b.onclick=()=>{selectedCompetitionId=b.dataset.id;analyticsView("scorers",{source:"home"});renderTop();openPortalModal("scorersModal")});
  host.querySelectorAll(".public-general").forEach(b=>b.onclick=()=>{selectedCompetitionId=b.dataset.id;openRankings("home")});
@@ -344,7 +352,9 @@ function currentWeekResults(c){
   }).sort((a,b)=>parseFixtureDate(a,c)-parseFixtureDate(b,c)||String(a.time||"").localeCompare(String(b.time||"")));
 }
 function renderResults(){
-  const c=activeCompetition(),rows=currentWeekResults(c);
+  const c=activeCompetition(),rows=c.type==="Campionato"?(c.fixtures||[]):currentWeekResults(c);
+  $("resultsModalTitle").textContent=c.type==="Campionato"?"Calendario · "+c.category:"Risultati";
+  if(c.type==="Campionato"){$("weekResults").innerHTML=rows.map(x=>'<div class="week-result"><div class="week-day">'+esc(x.round+"ª · "+x.date+" · "+x.time+" · Campo "+x.field)+'</div><div class="week-teams">'+esc(x.home)+'<br>'+esc(x.away)+'</div><div class="week-score">'+esc(x.result||"VS")+'</div></div>').join("");return;}
   $("weekResults").innerHTML=rows.length?rows.map(x=>'<div class="week-result"><div class="week-day">'+esc(x.date)+'</div><div class="week-teams">'+esc(x.home)+'<br>'+esc(x.away)+'</div><div class="week-score'+(String(x.result).toUpperCase()==="RINV"?' postponed':'')+'">'+esc(String(x.result).toUpperCase()==="RINV"?"RINV":String(x.result).replace("-", "–"))+'</div></div>').join(""):'<div class="empty2">Nessun risultato ancora pubblicato questa settimana.</div>';
 }
 function renderTop(){
@@ -375,14 +385,14 @@ function qualificationClass(c,g,pos){const rank=qualificationRank(c,g,pos);retur
 function renderGroupRankings(){
  const c=activeCompetition();$("rankingsCompetition").textContent=c.name;
  const info=qualificationInfo(c),banner=$("qualificationBanner");
- $("rankingsTabs").style.display=info?"none":"grid";
+ $("rankingsTabs").style.display=info||c.type==="Campionato"?"none":"grid";
  banner.style.display=info?"block":"none";
  banner.innerHTML=info?'<div class="qualification-title">Qualificazione alla fase finale</div><div class="qualification-row"><span class="qualification-tier gold">Fascia Oro</span>'+esc(info.gold)+'</div><div class="qualification-row"><span class="qualification-tier silver">Fascia Argento</span>'+esc(info.silver)+'</div>':"";
 
  const groups=Object.entries(c.standings||{}).sort((a,b)=>String(a[0]).localeCompare(String(b[0]),"it"));
  $("groupsRankings").innerHTML=groups.map(([g,rows])=>{
   const sorted=[...(rows||[])].sort((a,b)=>(b.pti-a.pti)||(b.dr-a.dr)||(b.rf-a.rf)||String(a.team).localeCompare(String(b.team),"it"));
-  return '<section class="group-ranking-card"><div class="group-ranking-title">Girone '+esc(g)+'</div><div class="group-tablewrap"><table class="group-table"><thead><tr><th>#</th><th>Squadra</th><th>G</th><th>V</th><th>P</th><th>S</th><th>GF</th><th>GS</th><th>DR</th><th>PTI</th></tr></thead><tbody>'+sorted.map((x,i)=>'<tr class="'+qualificationClass(c,g,i+1)+'"><td>'+(i+1)+'</td><td>'+esc(canon(x.team))+'</td><td>'+x.pg+'</td><td>'+x.v+'</td><td>'+x.n+'</td><td>'+x.p+'</td><td>'+x.rf+'</td><td>'+x.rs+'</td><td>'+(Number(x.dr)>0?"+":"")+x.dr+'</td><td><strong>'+x.pti+'</strong></td></tr>').join("")+'</tbody></table></div></section>';
+  return '<section class="group-ranking-card"><div class="group-ranking-title">'+(c.type==="Campionato"?"Classifica "+esc(c.category):"Girone "+esc(g))+'</div><div class="group-tablewrap"><table class="group-table"><thead><tr><th>#</th><th>Squadra</th><th>G</th><th>V</th><th>P</th><th>S</th><th>GF</th><th>GS</th><th>DR</th><th>PTI</th></tr></thead><tbody>'+sorted.map((x,i)=>'<tr class="'+qualificationClass(c,g,i+1)+'"><td>'+(i+1)+'</td><td>'+esc(canon(x.team))+'</td><td>'+x.pg+'</td><td>'+x.v+'</td><td>'+x.n+'</td><td>'+x.p+'</td><td>'+x.rf+'</td><td>'+x.rs+'</td><td>'+(Number(x.dr)>0?"+":"")+x.dr+'</td><td><strong>'+x.pti+'</strong></td></tr>').join("")+'</tbody></table></div></section>';
  }).join("");
 }
 
@@ -453,6 +463,7 @@ function showTeamStandings(which){
  $("teamBracketTab").classList.toggle("active",bracket);$("teamGroupTab").classList.toggle("active",!bracket);
 }
 function updateTeamBracket(c,t){
+ if(c.type==="Campionato"){$("teamBracketTab").style.display="none";$("teamBracket").innerHTML="";showTeamStandings("group");return;}
  const models=bracketModel(c),m=models.find(m=>(m.teams&&m.teams.some(x=>sameTeam(x.team,t)))||(!m.teams&&m.games.some(g=>sameTeam(g.home,t)||sameTeam(g.away,t))));
  const enabled=!!m;
  $("teamBracketTab").style.display=enabled?"":"none";
