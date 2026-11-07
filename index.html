@@ -570,8 +570,18 @@ function renderResults(){
  const c=activeCompetition(),rows=c.type==="Campionato"?(c.fixtures||[]):currentWeekResults(c);
  $("resultsModalTitle").textContent=c.type==="Campionato"?"Calendario · "+c.category:"Risultati";
  if(c.type==="Campionato"){
-  const groups=new Map();rows.forEach(f=>{const round=Number(f.round)||1;if(!groups.has(round))groups.set(round,[]);groups.get(round).push(f)});
-  $("weekResults").innerHTML=[...groups].sort((a,b)=>a[0]-b[0]).map(([round,matches])=>'<section class="league-round"><h4 class="league-round-title">'+round+'ª GIORNATA</h4>'+matches.map(f=>'<div class="league-match"><div class="league-kickoff"><span>'+esc(String(f.date||"").toUpperCase())+'</span><strong>'+esc(f.time)+'</strong></div><div class="week-teams">'+esc(f.home)+'<br>'+esc(f.away)+'</div><div class="week-score">'+esc(f.result||"VS")+'</div></div>').join("")+'</section>').join("");
+  const fixtures=fixtureCalendarOrder(c,rows);
+  let lastRound=null;
+  $("weekResults").innerHTML=fixtures.map(f=>{
+   const round=Number(f.round)||1;
+   const heading=lastRound===round?"":'<h4 class="league-round-title">'+round+'ª GIORNATA</h4>';
+   lastRound=round;
+   const undecided=!f.date||/^(dal\b|da definire|non programm|tbd)/i.test(String(f.date||""));
+   const date=undecided?"DA PROGRAMMARE":String(f.date).toUpperCase();
+   const time=/^\d{1,2}:\d{2}$/.test(String(f.time||""))?f.time:"—";
+   return '<section class="calendar-entry" data-calendar-match>'+heading+'<div class="league-match"><div class="league-kickoff"><span>'+esc(date)+'</span><strong>'+esc(time)+'</strong></div><div class="week-teams">'+esc(f.home)+'<br>'+esc(f.away)+'</div><div class="week-score">'+esc(f.result||"VS")+'</div></div></section>';
+  }).join("");
+  wireCalendarToggle($("weekResults"));
   return;
  }
  $("weekResults").innerHTML=rows.length?rows.map(x=>'<div class="week-result"><div class="week-day">'+esc(x.date)+'</div><div class="week-teams">'+esc(x.home)+'<br>'+esc(x.away)+'</div><div class="week-score'+(String(x.result).toUpperCase()==="RINV"?' postponed':'')+'">'+esc(String(x.result).toUpperCase()==="RINV"?"RINV":String(x.result).replace("-", "–"))+'</div></div>').join(""):'<div class="empty2">Nessun risultato ancora pubblicato questa settimana.</div>';
