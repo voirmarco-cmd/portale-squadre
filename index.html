@@ -201,6 +201,10 @@ body:has(#dash[style*="display: block"]) .cup-winners,body:has(#dash[style*="dis
 .calendar-expand-arrow{display:inline-block;font-size:21px;line-height:1;transition:transform .2s}
 .calendar-expand[aria-expanded="true"] .calendar-expand-arrow{transform:rotate(180deg)}
 [data-calendar-match][hidden]{display:none!important}
+.calendar-more[hidden]{display:none!important}
+.calendar-more:not([hidden]){display:contents}
+/* Skip painting out-of-viewport calendar rows in long expanded schedules. */
+.calendar-more .calendar-entry,.calendar-more .fixture{content-visibility:auto;contain-intrinsic-size:auto 90px}
 .calendar-entry{margin:0 0 5px;min-width:0}
 .calendar-entry .league-round-title{margin:12px 0 5px}
 .calendar-entry:first-child .league-round-title{margin-top:0}
@@ -490,19 +494,31 @@ function fixtureCalendarOrder(c,fixtures){
  });
 }
 function wireCalendarToggle(root,limit=5){
- const items=[...root.querySelectorAll("[data-calendar-match]")];
- items.forEach((item,i)=>item.hidden=i>=limit);
+ const items=[...root.querySelectorAll(":scope > [data-calendar-match]")];
  if(items.length<=limit)return;
+ // Move the initially hidden rows into one group. Expanding then changes ONE
+ // element's visibility instead of synchronously changing hundreds of rows.
+ const more=document.createElement("div");
+ more.className="calendar-more";
+ more.id=root.id+"More";
+ more.hidden=true;
+ const fragment=document.createDocumentFragment();
+ for(let i=limit;i<items.length;i++)fragment.appendChild(items[i]);
+ more.appendChild(fragment);
+ root.appendChild(more);
  const button=document.createElement("button");
- button.type="button";button.className="calendar-expand";
+ button.type="button";
+ button.className="calendar-expand";
  button.setAttribute("aria-expanded","false");
+ button.setAttribute("aria-controls",more.id);
  button.innerHTML='<span>Mostra tutte le partite ('+items.length+')</span><span class="calendar-expand-arrow" aria-hidden="true">⌄</span>';
- root.append(button);
+ root.appendChild(button);
  button.addEventListener("click",()=>{
-  const expanded=button.getAttribute("aria-expanded")==="true";
-  items.forEach((item,i)=>item.hidden=!expanded&&i>=limit);
-  button.setAttribute("aria-expanded",String(!expanded));
-  button.querySelector("span").textContent=expanded?"Mostra tutte le partite ("+items.length+")":"Mostra le prime "+limit+" partite";
+  const expand=more.hidden;
+  // Update the button before changing layout, so interaction feedback is immediate.
+  button.setAttribute("aria-expanded",String(expand));
+  button.querySelector("span").textContent=expand?"Mostra le prime "+limit+" partite":"Mostra tutte le partite ("+items.length+")";
+  more.hidden=!expand;
  });
 }
 function selectCompetition(id){
