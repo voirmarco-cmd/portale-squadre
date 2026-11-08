@@ -210,6 +210,12 @@ body:has(#dash[style*="display: block"]) .cup-winners,body:has(#dash[style*="dis
 .calendar-entry:first-child .league-round-title{margin-top:0}
 .calendar-entry .league-match{min-width:0}
 @media(max-width:440px){.calendar-expand{padding:12px 8px}.calendar-entry .league-match{gap:7px}}
+
+/* Explicit rest rounds for odd-sized leagues, separate from unprogrammed fixtures. */
+.fixture-rest,.calendar-rest .league-match{background:var(--soft);border-radius:11px}
+.fixture-rest .opp{font-weight:900;color:var(--a)}
+.rest-tag{display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;padding:5px 9px;border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:9px;font-size:11px;font-weight:850;letter-spacing:.035em}
+.rest-description{display:block;font-weight:500;font-size:12px;color:var(--muted);margin-top:3px}
 </style></head><body>
 <div class="wrap"><aside class="ios-install" id="iosInstall" aria-label="Installa Portale NCC"><button class="ios-install-close" id="iosInstallClose" type="button" aria-label="Chiudi">×</button><strong>Installa Portale NCC sul tuo iPhone</strong><p>Accesso rapido a calendario, classifica e partite.</p><div class="ios-how"><span class="ios-share">⇧</span> Condividi &nbsp;→&nbsp; Aggiungi alla schermata Home</div></aside><section class="hero"><div class="hero-actions"><button class="home-toggle" id="homeToggle" type="button" aria-label="Torna alla home" title="Home"><svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path fill="currentColor" d="M3 10.6 12 3l9 7.6v9.1c0 .7-.6 1.3-1.3 1.3h-5.2v-6.2h-5V21H4.3C3.6 21 3 20.4 3 19.7v-9.1Z"/></svg></button><button class="theme-toggle" id="themeToggle" type="button" aria-label="Attiva modalità notte" title="Cambia tema">☾</button></div>
 <div class="brand"><img class="logo" src="/icons/icon-192.png" alt="A.S.D. Nuovo Centro Coteto"><div><div class="brandname">Nuovo Centro Coteto</div><div class="brandsub">Portale competizioni</div></div></div>
@@ -470,6 +476,31 @@ function possibleFinalForTeam(c,t){
  return {...final,home:t,away:other.home+"/"+other.away,possibleFinal:true};
 }
 
+function leagueRestFixtures(c){
+ if(c.type!=="Campionato")return [];
+ const teams=Object.values(c.groups||{}).flat();
+ // Only a complete odd-team round can establish an actual bye.
+ if(teams.length<3||teams.length%2!==1)return [];
+ const rounds=new Map();
+ for(const f of c.fixtures||[]){
+  const r=Number(f.round);
+  if(!r||!teams.some(t=>sameTeam(t,f.home))||!teams.some(t=>sameTeam(t,f.away)))continue;
+  if(!rounds.has(r))rounds.set(r,[]);
+  rounds.get(r).push(f);
+ }
+ const rests=[];
+ for(const [round,fixtures] of rounds){
+  if(fixtures.length!==(teams.length-1)/2)continue;
+  const involved=fixtures.flatMap(f=>[f.home,f.away]);
+  const missing=teams.filter(t=>!involved.some(n=>sameTeam(t,n)));
+  if(missing.length!==1)continue;
+  // If a team appears twice in one round, the omission is not evidence of rest.
+  if(involved.some((name,i)=>involved.slice(0,i).some(t=>sameTeam(t,name))))continue;
+  const date=fixtures.find(f=>/^dal\s/i.test(String(f.date||"")))?.date||"";
+  rests.push({round,bye:true,team:missing[0],home:missing[0],away:"",date,time:"",field:"—",result:""});
+ }
+ return rests;
+}
 function fixtureCalendarOrder(c,fixtures){
  const base=Number(String(c.edition||c.name||"").match(/20\d{2}/)?.[0]||new Date().getFullYear());
  const dateValue=f=>{
@@ -486,6 +517,11 @@ function fixtureCalendarOrder(c,fixtures){
   return new Date(value).getUTCDate()===day&&month>=1&&month<=12?value:null;
  };
  return [...fixtures].sort((a,b)=>{
+  if(c.type==="Campionato"){
+   const diff=(Number(a.round)||0)-(Number(b.round)||0);
+   if(diff)return diff;
+   if(a.bye!==b.bye)return a.bye?1:-1;
+  }
   const ad=dateValue(a),bd=dateValue(b);
   if(ad!==null&&bd!==null)return ad-bd||(Number(a.round)||0)-(Number(b.round)||0);
   if(ad!==null)return -1;
@@ -537,10 +573,12 @@ function selectCompetition(id){
   $("resultsBtn").textContent=isLeague?"Calendario":"Risultati";
   $("topScorersBtn").style.display=isLeague&&!(c.scorers||[]).length?"none":"";
   renderDisciplinary(t);updateTeamBracket(c,t);
-  const fs=fixtureCalendarOrder(c,(c.fixtures||[]).filter(f=>sameTeam(f.home,t)||sameTeam(f.away,t))),possibleFinal=possibleFinalForTeam(c,t);if(possibleFinal)fs.push(possibleFinal);const n=fs.find(f=>!f.result&&!f.possibleFinal);
+  const teamMatches=(c.fixtures||[]).filter(f=>sameTeam(f.home,t)||sameTeam(f.away,t));
+  const teamRests=leagueRestFixtures(c).filter(f=>sameTeam(f.team,t));
+  const fs=fixtureCalendarOrder(c,[...teamMatches,...teamRests]),possibleFinal=possibleFinalForTeam(c,t);if(possibleFinal)fs.push(possibleFinal);const n=fs.find(f=>!f.result&&!f.possibleFinal&&!f.bye);
   if(n){const nextCountdown=fixtureCountdown(n.date,c.name),homeTeam=canon(n.home),opp=homeTeam===t?n.away:n.home;$("next").innerHTML='<div class="next-head"><div class="match-kickoff">'+esc(n.date)+' <span class="time">· '+esc(n.time)+'</span></div>'+(n.recovery?'<span class="recovery-tag">RECUPERO</span>':'')+(nextCountdown?'<div class="next-countdown '+nextCountdown.cls+'">'+nextCountdown.text+'</div>':'')+'</div><div class="match"><div class="club">'+esc(n.home)+(true?opponentSanctionBadge(n.home):'')+'</div><div class="vs">VS</div><div class="club away">'+esc(n.away)+(true?opponentSanctionBadge(n.away):'')+'</div></div><div class="match-place"><span class="place-item">'+(n.field!=="—"?"Campo "+esc(n.field):"Campo da definire")+'</span><span class="place-item">'+esc(fixtureStageLabel(n))+'</span></div>';document.querySelectorAll("#next .opponent-sanction-btn").forEach(b=>b.onclick=e=>{e.stopPropagation();const p=b.nextElementSibling,open=p.classList.toggle("open");b.setAttribute("aria-expanded",open?"true":"false")});}else if(c.id==="coppa-bartoli-bassano-c5-2026" && (c.fixtures||[]).some(f=>f.date==="lun 26/10"&&!f.result)) $("next").innerHTML='<div class="next-head"><div class="match-kickoff">QUARTI DI FINALE</div></div><div class="match-place"><span class="place-item">Mercoledì 28 o giovedì 29 ottobre</span></div><div class="note" style="margin-top:12px">Giorno esatto, orario, campo e avversario saranno comunicati lunedì 26 ottobre, al termine dei recuperi.</div>';else $("next").innerHTML='<div class="note">Nessuna gara futura pubblicata.</div>';
   const rows=[...((c.standings||{})[g]||[])].sort((a,b)=>(b.pti-a.pti)||(b.dr-a.dr)||(b.rf-a.rf)||a.team.localeCompare(b.team,"it"));
-  const roundCounts=fs.reduce((m,f)=>(m[f.round]=(m[f.round]||0)+1,m),{});$("fixtures").innerHTML=fs.map(f=>{const home=sameTeam(f.home,t),opp=home?f.away:f.home,scheduled=f.time&&norm(f.time)!=="da definire"&&!norm(f.date).startsWith("dal "),doubleTurn=fs.filter(x=>x.round===f.round&&x.date===f.date&&String(x.result||"").toUpperCase()!=="RINV").length>1,oldWeek=fixtureWeekHasPassed(f.date,c.name),pastFixture=(()=>{const m=String(f.date||"").match(/(\d{1,2})\/(\d{1,2})/);if(!m)return false;const y=Number((String(c.name||"").match(/\b(20\d{2})\b/)||[])[1]||new Date().getFullYear());const d=new Date(y,Number(m[2])-1,Number(m[1]));const now=new Date();return d<new Date(now.getFullYear(),now.getMonth(),now.getDate())})(),countdown=scheduled&&!f.result?fixtureCountdown(f.date,c.name):null,right=f.result?(()=>{const postponed=String(f.result).toUpperCase()==="RINV";if(postponed)return '<div class="result-wrap"><span class="result-tag postponed">RINV</span></div>';const parts=String(f.result).split("-").map(Number),gf=home?parts[0]:parts[1],ga=home?parts[1]:parts[0],cls=gf>ga?"win":gf<ga?"loss":"draw",shown=gf+"-"+ga;const side=home?"home":"away",frozen=f.matchScorers?f.matchScorers[side]:undefined,scorers=Array.isArray(frozen)?frozen:[],detail=gf===0?'<span>Nessun marcatore</span>':frozen===null?'<span>Marcatori in verifica.</span>':scorers.length?scorers.map(x=>'<span>'+esc(x.name)+(Number(x.goals)>1?' ×'+esc(x.goals):'')+'</span>').join("")+(f.decidedByDcr?'':Math.max(0,gf-scorers.reduce((n,x)=>n+Number(x.goals||0),0))>0?'<span>Autogol'+(gf-scorers.reduce((n,x)=>n+Number(x.goals||0),0)>1?' ×'+(gf-scorers.reduce((n,x)=>n+Number(x.goals||0),0)):'')+'</span>':''):'<span>Marcatori non pubblicati.</span>';return '<div class="result-wrap"><button type="button" class="result-tag '+cls+'" aria-expanded="false" aria-label="Mostra marcatori">'+esc(shown)+'</button><div class="score-popover"><strong>Marcatori</strong>'+detail+'</div></div>'})():f.possibleFinal?'<div class="tag">SE QUALIFICATA</div>':countdown?'<div class="countdown '+countdown.cls+'">'+countdown.text+'</div>':'<div class="tag">'+(scheduled?"in programma":"non programmata")+'</div>';return '<div class="fixture" data-calendar-match><div class="when">'+esc(f.date)+'<span class="ftime">'+esc(f.time)+'</span></div><div class="fixture-main"><div class="opp">vs '+esc(opp)+'</div><span class="fixture-sub">'+(f.possibleFinal?"EVENTUALE FINALE · ":"")+(f.field!=="—"?"Campo "+esc(f.field):"Orario/campo da definire")+'</span>'+(f.modifiedAt&&!f.recovery&&!pastFixture&&Date.now()-new Date(f.modifiedAt).getTime()<48*60*60*1000?'<span class="modified-tag">modificato</span>':'')+(f.recovery&&!pastFixture?'<span class="recovery-tag">recupero</span>':'')+(doubleTurn&&!pastFixture?'<span class="double-tag">doppio turno</span>':'')+'</div>'+right+'</div>'}).join("");wireCalendarToggle($("fixtures"));$("fixtures").querySelectorAll(".result-tag").forEach(btn=>btn.addEventListener("click",e=>{e.stopPropagation();const pop=btn.nextElementSibling,open=pop.classList.contains("open");$("fixtures").querySelectorAll(".score-popover.open").forEach(x=>x.classList.remove("open"));$("fixtures").querySelectorAll(".result-tag[aria-expanded='true']").forEach(x=>x.setAttribute("aria-expanded","false"));if(!open){analyticsEvent("Match Scorers Opened",{...analyticsContext(),team:selectedTeam||""});pop.classList.add("open");btn.setAttribute("aria-expanded","true")}}));document.onclick=e=>{if(!e.target.closest(".result-wrap")){$("fixtures").querySelectorAll(".score-popover.open").forEach(x=>x.classList.remove("open"));$("fixtures").querySelectorAll(".result-tag[aria-expanded='true']").forEach(x=>x.setAttribute("aria-expanded","false"))}};
+  const roundCounts=fs.reduce((m,f)=>(m[f.round]=(m[f.round]||0)+1,m),{});$("fixtures").innerHTML=fs.map(f=>{if(f.bye)return '<div class="fixture fixture-rest" data-calendar-match><div class="when">'+f.round+'ª GIORNATA</div><div class="fixture-main"><div class="opp">RIPOSA</div><span class="fixture-sub">Nessuna partita prevista in questa giornata</span></div><span class="rest-tag">RIPOSO</span></div>';const home=sameTeam(f.home,t),opp=home?f.away:f.home,scheduled=f.time&&norm(f.time)!=="da definire"&&!norm(f.date).startsWith("dal "),doubleTurn=fs.filter(x=>x.round===f.round&&x.date===f.date&&String(x.result||"").toUpperCase()!=="RINV").length>1,oldWeek=fixtureWeekHasPassed(f.date,c.name),pastFixture=(()=>{const m=String(f.date||"").match(/(\d{1,2})\/(\d{1,2})/);if(!m)return false;const y=Number((String(c.name||"").match(/\b(20\d{2})\b/)||[])[1]||new Date().getFullYear());const d=new Date(y,Number(m[2])-1,Number(m[1]));const now=new Date();return d<new Date(now.getFullYear(),now.getMonth(),now.getDate())})(),countdown=scheduled&&!f.result?fixtureCountdown(f.date,c.name):null,right=f.result?(()=>{const postponed=String(f.result).toUpperCase()==="RINV";if(postponed)return '<div class="result-wrap"><span class="result-tag postponed">RINV</span></div>';const parts=String(f.result).split("-").map(Number),gf=home?parts[0]:parts[1],ga=home?parts[1]:parts[0],cls=gf>ga?"win":gf<ga?"loss":"draw",shown=gf+"-"+ga;const side=home?"home":"away",frozen=f.matchScorers?f.matchScorers[side]:undefined,scorers=Array.isArray(frozen)?frozen:[],detail=gf===0?'<span>Nessun marcatore</span>':frozen===null?'<span>Marcatori in verifica.</span>':scorers.length?scorers.map(x=>'<span>'+esc(x.name)+(Number(x.goals)>1?' ×'+esc(x.goals):'')+'</span>').join("")+(f.decidedByDcr?'':Math.max(0,gf-scorers.reduce((n,x)=>n+Number(x.goals||0),0))>0?'<span>Autogol'+(gf-scorers.reduce((n,x)=>n+Number(x.goals||0),0)>1?' ×'+(gf-scorers.reduce((n,x)=>n+Number(x.goals||0),0)):'')+'</span>':''):'<span>Marcatori non pubblicati.</span>';return '<div class="result-wrap"><button type="button" class="result-tag '+cls+'" aria-expanded="false" aria-label="Mostra marcatori">'+esc(shown)+'</button><div class="score-popover"><strong>Marcatori</strong>'+detail+'</div></div>'})():f.possibleFinal?'<div class="tag">SE QUALIFICATA</div>':countdown?'<div class="countdown '+countdown.cls+'">'+countdown.text+'</div>':'<div class="tag">'+(scheduled?"in programma":"non programmata")+'</div>';return '<div class="fixture" data-calendar-match><div class="when">'+esc(f.date)+'<span class="ftime">'+esc(f.time)+'</span></div><div class="fixture-main"><div class="opp">vs '+esc(opp)+'</div><span class="fixture-sub">'+(f.possibleFinal?"EVENTUALE FINALE · ":"")+(f.field!=="—"?"Campo "+esc(f.field):"Orario/campo da definire")+'</span>'+(f.modifiedAt&&!f.recovery&&!pastFixture&&Date.now()-new Date(f.modifiedAt).getTime()<48*60*60*1000?'<span class="modified-tag">modificato</span>':'')+(f.recovery&&!pastFixture?'<span class="recovery-tag">recupero</span>':'')+(doubleTurn&&!pastFixture?'<span class="double-tag">doppio turno</span>':'')+'</div>'+right+'</div>'}).join("");wireCalendarToggle($("fixtures"));$("fixtures").querySelectorAll(".result-tag").forEach(btn=>btn.addEventListener("click",e=>{e.stopPropagation();const pop=btn.nextElementSibling,open=pop.classList.contains("open");$("fixtures").querySelectorAll(".score-popover.open").forEach(x=>x.classList.remove("open"));$("fixtures").querySelectorAll(".result-tag[aria-expanded='true']").forEach(x=>x.setAttribute("aria-expanded","false"));if(!open){analyticsEvent("Match Scorers Opened",{...analyticsContext(),team:selectedTeam||""});pop.classList.add("open");btn.setAttribute("aria-expanded","true")}}));document.onclick=e=>{if(!e.target.closest(".result-wrap")){$("fixtures").querySelectorAll(".score-popover.open").forEach(x=>x.classList.remove("open"));$("fixtures").querySelectorAll(".result-tag[aria-expanded='true']").forEach(x=>x.setAttribute("aria-expanded","false"))}};
   const cs=(c.scorers||[]).filter(x=>sameTeam(x.team,t)).sort((a,b)=>b.goals-a.goals||a.name.localeCompare(b.name,"it"));$("scorers").innerHTML=cs.length?cs.map(x=>'<div class="scorer-row"><div class="scorer-goals">'+esc(x.goals)+'</div><div class="scorer-name">'+esc(x.name)+'</div></div>').join(""):'<div class="empty2">Nessun marcatore ancora pubblicato.</div>';
   $("tbody").innerHTML=rows.map((x,i)=>'<tr class="'+(sameTeam(x.team,t)?"me ":"")+qualificationClass(c,g,i+1)+" "+leaguePositionClass(c,i+1)+'"><td>'+(i+1)+'</td><td>'+esc(x.team)+'</td><td>'+x.pg+'</td><td>'+x.v+'</td><td>'+x.n+'</td><td>'+x.p+'</td><td>'+x.pti+'</td></tr>').join("");
 }
@@ -583,7 +621,7 @@ function currentWeekResults(c){
   }).sort((a,b)=>parseFixtureDate(a,c)-parseFixtureDate(b,c)||String(a.time||"").localeCompare(String(b.time||"")));
 }
 function renderResults(){
- const c=activeCompetition(),rows=c.type==="Campionato"?(c.fixtures||[]):currentWeekResults(c);
+ const c=activeCompetition(),rows=c.type==="Campionato"?[...(c.fixtures||[]),...leagueRestFixtures(c)]:currentWeekResults(c);
  $("resultsModalTitle").textContent=c.type==="Campionato"?"Calendario · "+c.category:"Risultati";
  if(c.type==="Campionato"){
   const fixtures=fixtureCalendarOrder(c,rows);
@@ -592,6 +630,7 @@ function renderResults(){
    const round=Number(f.round)||1;
    const heading=lastRound===round?"":'<h4 class="league-round-title">'+round+'ª GIORNATA</h4>';
    lastRound=round;
+   if(f.bye)return '<section class="calendar-entry calendar-rest" data-calendar-match>'+heading+'<div class="league-match"><div class="league-kickoff"><span>RIPOSO</span></div><div class="week-teams"><strong>'+esc(f.team)+'</strong><span class="rest-description">Riposa in questa giornata</span></div><span class="rest-tag">RIPOSA</span></div></section>';
    const undecided=!f.date||/^(dal\b|da definire|non programm|tbd)/i.test(String(f.date||""));
    const date=undecided?(String(f.date||"").toUpperCase()+" · DA PROGRAMMARE"):String(f.date).toUpperCase();
    const time=/^\d{1,2}:\d{2}$/.test(String(f.time||""))?f.time:"—";
