@@ -212,8 +212,12 @@ body:has(#dash[style*="display: block"]) .cup-winners,body:has(#dash[style*="dis
 @media(max-width:440px){.calendar-expand{padding:12px 8px}.calendar-entry .league-match{gap:7px}}
 
 /* Explicit rest rounds for odd-sized leagues, separate from unprogrammed fixtures. */
-.fixture-rest,.calendar-rest .league-match{background:var(--soft);border-radius:11px}
-.fixture-rest .opp{font-weight:900;color:var(--a)}
+.fixture-rest{background:color-mix(in srgb,var(--card) 96%,var(--a) 4%);border-color:var(--line);border-radius:13px;min-height:0}
+.fixture-rest .fixture-main{padding-right:82px}
+.fixture-rest>.rest-tag{position:absolute;top:13px;right:14px}
+.fixture-rest .opp{font-weight:800;color:var(--ink)}
+.calendar-rest .league-match{background:color-mix(in srgb,var(--card) 96%,var(--a) 4%);border-radius:0;border-bottom:1px solid var(--line);padding:10px 4px}
+.calendar-rest .rest-tag{background:transparent}
 .rest-tag{display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;padding:5px 9px;border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:9px;font-size:11px;font-weight:850;letter-spacing:.035em}
 .rest-description{display:block;font-weight:500;font-size:12px;color:var(--muted);margin-top:3px}
 </style></head><body>
