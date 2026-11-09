@@ -1,1 +1,12 @@
-{"name":"portale-squadre","private":true,"type":"module","dependencies":{"@vercel/blob":"^2.3.0"}}
+{
+  "name": "portale-squadre",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@vercel/blob": "^2.3.0"
+  },
+  "scripts": {
+    "check:publication": "node scripts/validate-publication.mjs",
+    "build": "npm run check:publication"
+  }
+}
