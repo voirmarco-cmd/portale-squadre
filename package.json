@@ -7,6 +7,6 @@
   },
   "scripts": {
     "check:publication": "node scripts/validate-publication.mjs",
-    "build": "npm run check:publication"
+    "build": "npm run check:publication && node scripts/prepare-public.mjs"
   }
 }
