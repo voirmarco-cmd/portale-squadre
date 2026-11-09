@@ -17,7 +17,7 @@ const html=readFileSync(new URL("../index.html", import.meta.url),"utf8");
 function objectAfter(marker) {
   const markerAt=html.indexOf(marker);
   if(markerAt<0)throw Error("Missing embedded data: "+marker);
-  const start=html.indexOf("{",markerAt+marker.length);
+  const start=marker.startsWith("{")?markerAt:html.indexOf("{",markerAt+marker.length);
   if(start<0)throw Error("Missing JSON object after "+marker);
   let depth=0,quoted=false,escaped=false;
   for(let i=start;i<html.length;i++){
