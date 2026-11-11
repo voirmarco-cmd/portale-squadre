@@ -76,7 +76,7 @@ const fingerprint=(id,f)=>[id,f.group||"",f.date||"",f.home||"",f.away||"",f.res
 const legacy=new Set(historicalExceptions.map(row=>row.join("|")));
 const encountered=new Set();
 const problems=[];
-let numericResults=0,validated=0,grandfathered=0,forfeits=0;
+let numericResults=0,validated=0,grandfathered=0,forfeits=0,pendingAttribution=0;
 
 for(const c of competitions){
   const id=c.id;
@@ -103,15 +103,23 @@ for(const c of competitions){
     let issue="";
     for(const [side,goalCount] of sides){
       const list=f.matchScorers?.[side];
-      if(!Array.isArray(list)){issue+=side+" scorer list missing; ";continue;}
+      const status=f.matchScorersStatus?.[side];
+      const documented=String(f.scorerSourceIssues?.[side]||"").trim();
+      const sourcePending=(status==="pending"||status==="partial")&&documented.length>=12;
+      if(!Array.isArray(list)){
+        if(list===null&&sourcePending){pendingAttribution++;continue;}
+        issue+=side+" scorer list missing without documented source gap; ";continue;
+      }
       const bad=list.some(p=>!String(p?.name||"").trim()||!Number.isInteger(Number(p.goals))||Number(p.goals)<1);
       if(bad){issue+=side+" contains invalid scorer name or goal count; ";continue;}
       const sum=list.reduce((n,p)=>n+Number(p.goals),0);
       // A shootout result is not a normal match-goal count.
-      if(!f.decidedByDcr && sum!==goalCount)
+      if(!f.decidedByDcr && sum!==goalCount){
+        if(sum<goalCount&&sourcePending){pendingAttribution++;continue;}
         issue+=side+" "+sum+"/"+goalCount+" goals attributed; ";
-      if(f.matchScorersStatus?.[side]==="partial")
-        issue+=side+" marked partial; ";
+      }
+      if(status==="partial"||status==="pending")
+        issue+=side+" marked incomplete although its goal count matches; ";
     }
     if(!issue){validated++;continue;}
     if(legacy.has(matchId)){grandfathered++;encountered.add(matchId);continue;}
@@ -119,7 +127,7 @@ for(const c of competitions){
   }
 }
 const report="[Pubblicazione] "+numericResults+" risultati, "+validated+
-  " tabellini completi, "+grandfathered+" anomalie storiche note, "+
+  " tabellini verificati, "+pendingAttribution+" lati con marcatori documentati come mancanti, "+grandfathered+" anomalie storiche note, "+
   forfeits+" risultati a tavolino espliciti.";
 console.log(report);
 if(grandfathered)console.warn("[Pubblicazione] Anomalie storiche pregresse: il controllo NON le considera tabellini completi.");
@@ -128,5 +136,5 @@ if(problems.length){
   console.error("PUBBLICAZIONE BLOCCATA: associare i marcatori di ciascuna partita prima del deploy. Non inventare marcatori.");
   process.exitCode=1;
 }else{
-  console.log("[Pubblicazione] OK: nessun nuovo risultato privo di marcatori.");
+  console.log("[Pubblicazione] OK: anomalie documentate visibili e nessuna attribuzione inventata.");
 }
