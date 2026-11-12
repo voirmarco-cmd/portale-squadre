@@ -1,0 +1,46 @@
+name: Deriva automaticamente marcatori dopo una pubblicazione
+on:
+  push:
+    branches: [main]
+    paths: [index.html]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: attribuzione-marcatori-main
+  cancel-in-progress: false
+jobs:
+  derive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: true
+      - name: Evita aggiornamenti da commit superati
+        id: current
+        shell: bash
+        run: |
+          git fetch origin main --quiet
+          if [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Calcola marcatori da incremento cumulativo
+        if: steps.current.outputs.run == 'true'
+        run: node scripts/derive-match-scorers.mjs --previous-ref=HEAD^
+      - name: Verifica che ogni attribuzione sia documentata
+        if: steps.current.outputs.run == 'true'
+        run: node scripts/validate-publication.mjs
+      - name: Salva attribuzioni certe nello snapshot pubblico
+        if: steps.current.outputs.run == 'true'
+        shell: bash
+        run: |
+          if ! git diff --quiet -- index.html; then
+            git config user.name "NCC Marcatori Bot"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add index.html
+            git commit -m "Attribuisci automaticamente marcatori verificati"
+            git push origin HEAD:main
+          fi
