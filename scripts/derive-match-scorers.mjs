@@ -36,7 +36,7 @@ try{previousHtml=execFileSync('git',['show',ref+':'+file],{encoding:'utf8',maxBu
 catch(e){console.error('[Marcatori] Impossibile leggere '+ref+':'+file+'; nessuna modifica.');process.exit(1)}
 const previous=extract(previousHtml).snapshot;
 const prevById=new Map((previous.competitions||[]).map(c=>[c.id,c]));
-let attributed=0,attributedGoals=0,pending=[],updatedTeams=0;
+let attributed=0,attributedGoals=0,pending=[],updatedTeams=0,markedScheduleChanges=0;
 for(const comp of current.snapshot.competitions||[]){
  const old=prevById.get(comp.id);if(!old)continue;
  const priorTotals=new Map((old.scorers||[]).map(s=>[norm(s.team)+'|'+norm(s.name),Number(s.goals)]));
@@ -48,6 +48,24 @@ for(const comp of current.snapshot.competitions||[]){
    list.push({name:String(s.name).trim(),goals:d});deltaByTeam.set(k,list);
  }
  const previousFixtures=new Map((old.fixtures||[]).map(f=>[[f.round,norm(f.home),norm(f.away)].join('|'),f]));
+ // Confronta lo stesso incontro nella pubblicazione precedente e marca per 48 ore
+ // soltanto cambi di calendario già resi pubblici (non nuove categorie o prima programmazione).
+ const oldRoundPairs=new Map((old.fixtures||[]).map(f=>[[f.round,[norm(f.home),norm(f.away)].sort().join('|')].join('|'),f]));
+ const nowIso=new Date().toISOString();
+ const isPlannedDate=date=>/^(lun|mar|mer|gio|ven|sab|dom)\s+\d{1,2}\/\d{1,2}$/i.test(String(date||''));
+ for(const f of comp.fixtures||[]){
+   if(f.result||f.modifiedAt)continue;
+   const key=[f.round,norm(f.home),norm(f.away)].join('|');
+   const previousMatch=previousFixtures.get(key)||oldRoundPairs.get([f.round,[norm(f.home),norm(f.away)].sort().join('|')].join('|'));
+   const changedFields=['date','time','field','locker'].some(k=>String(f[k]||'')!==String(previousMatch?.[k]||''));
+   const oldPublished=previousMatch&&(isPlannedDate(previousMatch.date)||String(previousMatch.date||'').startsWith('dal '));
+   const newScheduledWithoutPrior=!previousMatch&&isPlannedDate(f.date);
+   // Una partita semplicemente programmata per la prima volta non e' una modifica.
+   const firstScheduling=previousMatch&&!oldPublished&&isPlannedDate(f.date);
+   if((oldPublished&&changedFields&&!firstScheduling)||newScheduledWithoutPrior){
+     f.modifiedAt=nowIso;markedScheduleChanges++;
+   }
+ }
  const changed=(comp.fixtures||[]).filter(f=>{
    if(!/^\d+-\d+$/.test(String(f.result||'')))return false;
    const oldF=previousFixtures.get([f.round,norm(f.home),norm(f.away)].join('|'));
@@ -84,9 +102,9 @@ for(const comp of current.snapshot.competitions||[]){
    attributed++;attributedGoals+=goals;updatedTeams++;
  }
 }
-console.log('[Marcatori] Lati attribuiti: '+attributed+', gol attribuiti: '+attributedGoals+', non derivabili: '+pending.length);
+console.log('[Marcatori] Lati attribuiti: '+attributed+', gol attribuiti: '+attributedGoals+', non derivabili: '+pending.length+'; partite modificate: '+markedScheduleChanges);
 for(const x of pending)console.warn('[Marcatori] Da verificare: '+JSON.stringify(x));
-if(attributed>0){
+if(attributed>0||markedScheduleChanges>0){
  if(checkOnly)process.exit(2);
  const html=currentHtml.slice(0,current.start)+JSON.stringify(current.snapshot)+currentHtml.slice(current.end);
  writeFileSync(file,html);
