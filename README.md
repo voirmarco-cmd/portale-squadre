@@ -33,7 +33,7 @@ A ogni comando **PUBBLICA PORTALE SQUADRE** che aggiorna ufficialmente i dati pu
 **A ogni PUBBLICA PORTALE SQUADRE** leggere sempre le marcature individuali e i risultati delle fonti Google Sheets correnti di ciascuna competizione, non soltanto i risultati. Il controllo GitHub Actions `check-match-scorers.yml` esamina inoltre tutti gli snapshot pubblicati, inclusi quelli dei campionati, dopo ogni modifica al portale e ogni giorno. Questo audit **non importa autonomamente i dati Google**: la lettura autorizzata delle fonti resta parte del workflow di pubblicazione.
 
 Procedura obbligatoria di generazione dello snapshot:
-1. Leggere il calendario delle gare e le righe dei marcatori elementari con squadra, data e reti (non dedurre i marcatori dalla sola classifica cannonieri cumulativa).
+1. Leggere il calendario delle gare, le fonti MARCATORI e lo snapshot ufficiale precedente. **Derivare automaticamente i marcatori** dalla differenza fra le classifiche marcatori cumulative precedenti e quelle nuove, quando ogni squadra ha una sola nuova partita e la somma degli incrementi coincide esattamente con i gol segnati. Non usare mai il cumulativo attuale da solo come attribuzione di partita.
 2. Normalizzare gli alias delle squadre (es. UTD / UNITED), il formato data e l'identità della competizione; associare una riga marcatore alla partita solo se competizione + data + squadra individuano una **unica** partita. Se non è univoca, lasciare in attesa e segnalare.
 3. Scrivere `fixture.matchScorers = {home:[{name,goals}],away:[{name,goals}]}` quando le liste sono effettivamente disponibili. Per una squadra con 0 gol usare `[]`; quando il dettaglio manca o non è verificato usare `null` per il lato relativo. Mai usare un elenco vuoto come sostituto di dati non ancora inseriti.
 4. Verificare la somma dei gol per ogni lato. Se supera il risultato, fermare la pubblicazione e segnalare l'errore. Se è inferiore, **non inventare autogol**: mantenere le marcature note e indicare la parte mancante come in verifica, a meno che l'autogol sia documentato esplicitamente.
@@ -41,6 +41,21 @@ Procedura obbligatoria di generazione dello snapshot:
 6. Dopo ogni pubblicazione controllare il report automatico per **tutte** le competizioni, con priorità per nuovi risultati con marcatori mancanti. Una segnalazione di mancata compilazione non è motivo per inventare dati; una contraddizione dei dati è un errore.
 
 **Limite attuale:** il controllo GitHub Actions implementa la verifica degli snapshot, non un sincronizzatore non presidiato Google Sheets → GitHub → Vercel. Quest'ultimo richiederebbe credenziali sicure di lettura per i Google Sheets e un workflow esplicitamente autorizzato per il rilascio dei dati ufficiali. Non presentare il controllo come una sincronizzazione completata.
+
+## Derivazione automatica dei marcatori a ogni pubblicazione (13 novembre 2026)
+
+**OBBLIGATORIO, SENZA CHIEDERE ALL'UTENTE:** prima di considerare conclusa ogni pubblicazione, confrontare i marcatori cumulativi dei nuovi comunicati con quelli dell'ultimo snapshot pubblicato. Per ciascuna squadra con **una sola nuova gara** e incrementi dei singoli tesserati che sommano esattamente ai gol di quella gara, registrare automaticamente nel tabellino `matchScorers` i nomi e le reti. Questo e' il flusso ordinario, non una correzione eccezionale.
+
+Il repository include `scripts/derive-match-scorers.mjs` e il workflow `.github/workflows/derive-match-scorers.yml`. Il workflow si avvia automaticamente alle modifiche di `index.html` su `main`, legge lo snapshot della revisione precedente, calcola le differenze verificabili, controlla lo snapshot e salva su GitHub i tabellini derivati. Lo script puo' essere eseguito anche prima del commit, passando `--previous-ref=<revisione precedente>`.
+
+Per una nuova gara e una squadra:
+- sottrarre il cumulativo precedente, **per nome di giocatore e squadra**, al cumulativo corrente; includere anche i giocatori presenti solo nella nuova rilevazione;
+- associare le differenze alla gara solo quando la squadra ha esattamente **una nuova gara con risultato**, tutte le differenze sono non negative e la loro somma coincide con il punteggio;
+- scrivere `matchScorers.home` e `matchScorers.away` per le due squadre; zero reti documentate diventa `[]`;
+- lasciare inalterati i tabellini gia' verificati, non cancellare i dettagli precedenti, non attribuire reti in presenza di risultati multipli/ambigui, correzioni cumulative negative o totali incoerenti;
+- distinguere in modo esplicito il caso davvero non ricostruibile; non presentare una fonte cumulativa come se fosse insufficiente *a priori*.
+
+**A ogni pubblicazione controllare anche che il commit con le attribuzioni sia effettivamente arrivato su Vercel in stato READY**. Il workflow automatizza il calcolo **dopo** che i fogli sono stati letti e i nuovi dati inseriti nello snapshot: non e' un sincronizzatore autonomo dei Google Sheets.
 
 ## Principio di pubblicazione
 
