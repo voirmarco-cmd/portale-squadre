@@ -776,7 +776,8 @@ const LEAGUE_ZONE_RULES={
  "campionato-c5-pro-2026-27":{promotion:[1],playoff:[2,5]},
  // Nel calcio a 7 non esistono né play-out né fasce retrocessione.
  "campionato-c7-a-2026-27":{title:[1],playoff:[2,5]},
- "campionato-c7-b-2026-27":{promotion:[1],playoff:[2,5]}
+ "campionato-c7-b-2026-27":{promotion:[1],playoff:[2,5]},
+ "campionato-gabbione-2026-27":{promotion:[1,8],playoff:[9,15]}
 };
 function leaguePositionType(c,position){
  if(c.type!=="Campionato")return "";
@@ -787,7 +788,7 @@ function leaguePositionType(c,position){
 function leaguePositionClass(c,position){const zone=leaguePositionType(c,position);return zone?"league-pos-"+zone:""}
 function leagueLegend(c){
  if(c.type!=="Campionato")return "";
- const labels={title:"Titolo",promotion:"Promozione",playoff:"Play-off",playout:"Play-out",playoutSoft:"Play-out",relegation:"Retrocessione"};
+ const labels=c.id==="campionato-gabbione-2026-27"?{promotion:"Prime 8 posizioni",playoff:"Posizioni 9–15"}:{title:"Titolo",promotion:"Promozione",playoff:"Play-off",playout:"Play-out",playoutSoft:"Play-out",relegation:"Retrocessione"};
  const zone=LEAGUE_ZONE_RULES[c.id]||{},chips=Object.keys(zone).map(z=>'<span class="league-legend-item"><i class="league-legend-dot league-pos-'+z+'"></i>'+labels[z]+'</span>').join("");
  const played=(c.fixtures||[]).some(f=>/^\d+\s*-\s*\d+$/.test(String(f.result||"")));
  return '<div class="league-legend"><div class="league-legend-items">'+chips+'</div><div class="league-legend-note">'+(played?"Le fasce seguono la posizione in classifica.":"Fasce regolamentari: classifica iniziale a zero, posizioni non ancora acquisite.")+'</div></div>';
