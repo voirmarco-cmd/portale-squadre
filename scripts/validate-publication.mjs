@@ -94,7 +94,20 @@ for(const c of competitions){
       continue;
     }
     if(!numeric){
-      if(!["RINV"].includes(result.toUpperCase()))
+      if(result.toUpperCase()==="JOLLY"){
+        // JOLLY è uno spostamento richiesto: nessun punteggio e nessun marcatore.
+        // Il lato che lo ha giocato deve essere esplicito e parte della gara.
+        const by=String(f.jollyBy||"").trim();
+        if(c.type!=="Campionato"||!by||![f.home,f.away].includes(by))
+          problems.push(matchId+": JOLLY requires a valid jollyBy participant in a championship");
+        else {
+          const played=(c.fixtures||[]).filter(x=>String(x.result||"").toUpperCase()==="JOLLY"&&x.jollyBy===by);
+          const suffered=[f.home,f.away].find(t=>t!==by);
+          const previousSuffered=(c.fixtures||[]).filter(x=>String(x.result||"").toUpperCase()==="JOLLY"&&x!==f&&x.jollyBy&&[x.home,x.away].includes(suffered)&&x.jollyBy!==suffered);
+          if(played.length>1)problems.push(matchId+": team played more than one seasonal jolly");
+          if(previousSuffered.length)problems.push(matchId+": opponent has already suffered a jolly");
+        }
+      }else if(result.toUpperCase()!=="RINV")
         problems.push(matchId+": unrecognized result; document a forfeit explicitly");
       continue;
     }
