@@ -18,16 +18,32 @@ jobs:
         with:
           fetch-depth: 2
           persist-credentials: true
+      - name: Evita aggiornamenti da commit superati
+        id: current
+        run: |
+          git fetch origin main --quiet
+          if [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Confronta con l'ultima versione pubblicata
+        if: steps.current.outputs.run == 'true'
         run: |
           git show HEAD^:index.html > /tmp/ncc-previous-index.html
           node scripts/mark-modified.mjs /tmp/ncc-previous-index.html index.html
       - name: Pubblica i timestamp delle partite spostate
+        if: steps.current.outputs.run == 'true'
         run: |
           if ! git diff --quiet -- index.html; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add index.html
             git commit -m "Aggiorna automaticamente MODIFICATO [auto-modificato]"
-            git push
+            git fetch origin main --quiet
+            if [ "$(git rev-parse HEAD^)" != "$(git rev-parse origin/main)" ]; then
+              echo "::warning::Modifica più recente in main: non sovrascrivo timestamp di un commit precedente."
+              exit 0
+            fi
+            git push origin HEAD:main
           fi

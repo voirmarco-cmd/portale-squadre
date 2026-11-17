@@ -14,7 +14,7 @@ function parseFixtures(html) {
 const fixtures = parseFixtures(fs.readFileSync('index.html','utf8'));
 const missing = [], invalid = [], complete = [];
 for (const f of fixtures) {
-  if (!f.result || /RINV|POST|ANN/i.test(f.result)) continue;
+  if (!f.result || /^(?:RINV|POST|ANN|JOLLY)$/i.test(String(f.result).trim())) continue;
   const m = /^\s*(\d+)\s*[-:]\s*(\d+)\s*(?:DCR)?\s*$/i.exec(String(f.result));
   if (!m) { invalid.push({f,reason:'risultato non interpretabile'}); continue; }
   const score = {home:Number(m[1]),away:Number(m[2])};

@@ -42,5 +42,10 @@ jobs:
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add index.html
             git commit -m "Attribuisci automaticamente marcatori verificati"
+            git fetch origin main --quiet
+            if [ "$(git rev-parse HEAD^)" != "$(git rev-parse origin/main)" ]; then
+              echo "::warning::Nuova pubblicazione rilevata durante l'analisi: salto il push obsoleto. La nuova pubblicazione avvia il proprio controllo."
+              exit 0
+            fi
             git push origin HEAD:main
           fi

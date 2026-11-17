@@ -33,16 +33,28 @@ function fixtureBlocks(source) {
 
 const oldBlocks = fixtureBlocks(oldHtml);
 const newBlocks = fixtureBlocks(html);
-if (oldBlocks.length !== newBlocks.length || !newBlocks.length) {
-  throw Error('Competition fixture blocks changed: manual review required');
-}
+if (!newBlocks.length) throw Error('No competition fixtures found');
 const key = g => [g.round, g.group || '', g.home, g.away].join('|');
+// Tournaments may be added, removed or reordered between releases. Align blocks by
+// existing fixture identity, never their array position or total count.
+const oldSets = oldBlocks.map(block => new Set(block.games.map(key)));
+const usedOld = new Set();
 const timestamp = new Date().toISOString();
 let changed = 0;
 const replacements = [];
 for (let i = 0; i < newBlocks.length; i++) {
-  const before = new Map(oldBlocks[i].games.map(g => [key(g), g]));
   const after = newBlocks[i];
+  const keys = after.games.map(key);
+  let best = -1, shared = 0;
+  for (let j = 0; j < oldBlocks.length; j++) {
+    if (usedOld.has(j)) continue;
+    const overlap = keys.filter(k => oldSets[j].has(k)).length;
+    if (overlap > shared) { best = j; shared = overlap; }
+  }
+  // New competitions have no comparable old fixture block, so leave them alone.
+  if (best < 0 || shared < 2 || shared / Math.min(keys.length, oldSets[best].size) < 0.1) continue;
+  usedOld.add(best);
+  const before = new Map(oldBlocks[best].games.map(g => [key(g), g]));
   let touched = false;
   for (const game of after.games) {
     const previous = before.get(key(game));
