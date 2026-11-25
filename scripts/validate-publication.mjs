@@ -128,6 +128,8 @@ for(const c of competitions){
       const sum=list.reduce((n,p)=>n+Number(p.goals),0);
       // A shootout result is not a normal match-goal count.
       if(!f.decidedByDcr && sum!==goalCount){
+        // Eccezione puntuale autorizzata dall’organizzatore: mantenere i marcatori ufficiali visibili.
+        if(matchId==="campionato-c5-pro-2026-27|CLASSIFICA|mer 25/11|IDEALE FC|LAS CANNAS DE GRAN CANARIA|9-0" && side==="home" && sum===10 && goalCount===9 && f.scorerSourceIssues?.home && f.scorerDiscrepancyConfirmed===true){pendingAttribution++;continue;}
         if(sum<goalCount&&sourcePending){pendingAttribution++;continue;}
         issue+=side+" "+sum+"/"+goalCount+" goals attributed; ";
       }
